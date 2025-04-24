@@ -7,7 +7,7 @@ import {
   updateTermsInDB,
 } from "./Terms.service";
 import sendResponse from "../../utils/sendResponse";
-import { findUserById } from "../user/user.service";
+import { findUserById } from "../User/user.service";
 import catchAsync from "../../utils/catchAsync";
 
 import sanitizeHtml from "sanitize-html";

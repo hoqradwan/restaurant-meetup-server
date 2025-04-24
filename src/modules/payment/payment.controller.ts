@@ -8,7 +8,7 @@ import { emitNotification } from "../../utils/socket";
 import { JWT_SECRET_KEY, STRIPE_SECRET_KEY } from "../../config";
 import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
-import { UserModel } from "../user/user.model";
+import { UserModel } from "../User/user.model";
 import sendResponse from "../../utils/sendResponse";
 import { SubscriptionModel } from "../subscription/subscription.model";
 import { PaymentModel } from "./payment.model";

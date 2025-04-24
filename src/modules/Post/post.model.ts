@@ -15,6 +15,6 @@ const postSchema = new Schema<IPost>({
         ref: 'User',
         required: true,
     },
-})
+},{timestamps: true}); 
 
 export const Post = mongoose.models.Post || mongoose.model("Post", postSchema);

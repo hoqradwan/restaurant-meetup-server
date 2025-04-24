@@ -1,5 +1,5 @@
-import { UserModel } from "../modules/user/user.model";
-import { hashPassword } from "../modules/user/user.service";
+import { UserModel } from "../modules/User/user.model";
+import { hashPassword } from "../modules/User/user.service";
 
 const admin = {
   name: "MD Admin",

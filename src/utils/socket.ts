@@ -1,6 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
-import { UserModel } from "../modules/user/user.model";
+import { UserModel } from "../modules/User/user.model";
 import { NotificationModel } from "../modules/notifications/notification.model";
 import { INotification } from "../modules/notifications/notification.interface";
 

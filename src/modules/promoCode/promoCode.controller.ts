@@ -13,9 +13,9 @@ import {
   promoCodesList,
   promoCodeUpdate,
 } from "./promoCode.service";
-import { findUserById } from "../user/user.service";
+import { findUserById } from "../User/user.service";
 import { PromoCodeModel } from "./promoCode.model";
-import { UserModel } from "../user/user.model";
+import { UserModel } from "../User/user.model";
 import { JWT_SECRET_KEY } from "../../config";
 
 export const createPromoCode = catchAsync(

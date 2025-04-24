@@ -3,7 +3,7 @@ import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
 import sendResponse from "../../utils/sendResponse";
 import { Request, Response } from "express";
-import { findUserById } from "../user/user.service";
+import { findUserById } from "../User/user.service";
 import { JWT_SECRET_KEY } from "../../config";
 import jwt from "jsonwebtoken";
 import { createFeedback, feedbackList } from "./feedback.service";

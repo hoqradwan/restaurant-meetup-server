@@ -13,7 +13,7 @@ import {
 import { JWT_SECRET_KEY } from "../../config";
 import { PaymentModel } from "../payment/payment.model";
 import jwt from "jsonwebtoken";
-import { UserModel } from "../user/user.model";
+import { UserModel } from "../User/user.model";
 import { PromoCodeModel } from "../promoCode/promoCode.model";
 
 export const createSubscription = catchAsync(

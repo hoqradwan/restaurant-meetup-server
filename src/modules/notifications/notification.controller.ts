@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 import { Request, Response } from "express";
 
-import { findUserById } from "../user/user.service";
+import { findUserById } from "../User/user.service";
 import { NotificationModel } from "./notification.model";
 import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";

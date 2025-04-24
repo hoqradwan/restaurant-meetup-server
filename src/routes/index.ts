@@ -1,5 +1,5 @@
 import express from "express";
-import { UserRoutes } from "../modules/user/user.route";
+import { UserRoutes } from "../modules/User/user.route";
 import { TermsRoutes } from "../modules/Terms/Terms.route";
 import { AboutRoutes } from "../modules/About/About.route";
 import { PrivacyRoutes } from "../modules/privacy/Privacy.route";
