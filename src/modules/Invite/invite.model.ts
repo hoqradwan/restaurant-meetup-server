@@ -8,9 +8,10 @@ const InviteSchema = new Schema(
         duration: { type: Number, required: true }, // Duration in minutes
         expirationDateTime: { type: Date, required: true },
         agenda: { type: String, required: true },
-        fbUrl: { type: String, required: false },
-        instaUrl: { type: String, required: false },
-        linkedinUrl: { type: String, required: false },
+        // fbUrl: { type: String, required: false },
+        // instaUrl: { type: String, required: false },
+        // linkedinUrl: { type: String, required: false },
+        // auto fillup
         participants: [
             {
                 type: Types.ObjectId,
