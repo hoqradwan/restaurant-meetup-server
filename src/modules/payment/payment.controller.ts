@@ -1,20 +1,16 @@
-import mongoose, { Document } from "mongoose";
 import { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 import httpStatus from "http-status";
-import stripe from "stripe";
 import { emitNotification } from "../../utils/socket";
-import { JWT_SECRET_KEY, STRIPE_SECRET_KEY } from "../../config";
+import { JWT_SECRET_KEY } from "../../config";
 import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
-import { UserModel } from "../User/user.model";
+import { UserModel } from "../user/user.model";
 import sendResponse from "../../utils/sendResponse";
-import { SubscriptionModel } from "../subscription/subscription.model";
 import { PaymentModel } from "./payment.model";
 import { getAllPaymentFromDB } from "./payment.service";
-import { format, formatDate } from "date-fns";
-import { PromoCodeModel } from "../promoCode/promoCode.model";
+import { format } from "date-fns";
 //const stripeInstance = stripe(STRIPE_SECRET_KEY);
 
 // export const paymentCreate = catchAsync(async (req: Request, res: Response) => {
@@ -169,67 +165,8 @@ export const paymentCreate = catchAsync(async (req: Request, res: Response) => {
         message: "User not found.",
       });
     }
-    if (user.cuponCode) {
-      // Fetch the promo code details
-      const promoCode = await PromoCodeModel.findOne({ code: user.cuponCode });
-
-      // Calculate the duration from the promo code
-      const numericDuration = parseInt(promoCode?.duration || "0", 10);
-      const durationUnit = promoCode?.duration.includes("year")
-        ? "year"
-        : "month";
-
-      // Calculate the end date
-      const currentDate = new Date();
-      const endDate = new Date(currentDate);
-
-      if (durationUnit === "year") {
-        endDate.setFullYear(currentDate.getFullYear() + numericDuration);
-      } else {
-        endDate.setMonth(currentDate.getMonth() + numericDuration);
-      }
-
-      // Format the end date as a readable string
-      const formattedEndDate = endDate.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-
-      // Dynamic message based on the duration
-      const message = `You have a coupon code. This app is free for you until ${formattedEndDate}!`;
-
-      return sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message, // Use the dynamic message
-        data: null,
-        pagination: undefined,
-      });
-    }
-    // Validate subscriptionId
-    const subscription = await SubscriptionModel.findById(subscriptionId);
-    if (!subscription) {
-      return sendError(res, httpStatus.NOT_FOUND, {
-        message: "Subscription not found.",
-      });
-    }
-
-    // Ensure subscriptionDuration is a number
-    const subscriptionDuration =
-      typeof subscription.duration === "number"
-        ? subscription.duration
-        : parseInt(subscription.duration as string, 10) || 12;
-
-    const currentDate = new Date();
-    const expiryDate = new Date(currentDate);
-    expiryDate.setMonth(currentDate.getMonth() + subscriptionDuration);
-
-    // If the day of expiry is invalid (e.g., Feb 31), it will roll over to the next valid day
-    if (expiryDate.getDate() !== currentDate.getDate()) {
-      expiryDate.setDate(0); // Adjust to the last valid day of the previous month
-    }
-
+   
+ 
     // Store the expiry date in both the PaymentModel and UserModel
     const paymentData = {
       transactionId,
@@ -237,7 +174,6 @@ export const paymentCreate = catchAsync(async (req: Request, res: Response) => {
       subscriptionId, // Store the subscription ID
       amount, // Payment amount
       date: new Date(),
-      expiryDate: expiryDate, // Store the actual Date object for expiry in PaymentModel
       paymentData: {}, // You may want to include actual payment data here
       status: "completed",
       isDeleted: false,
@@ -250,42 +186,27 @@ export const paymentCreate = catchAsync(async (req: Request, res: Response) => {
     await UserModel.findByIdAndUpdate(
       userId,
       {
-        expiryDate: expiryDate, // Store the actual expiry date
         activeDate: new Date(), // Store the current date as activeDate
       },
       { new: true },
     );
 
     // Format the expiry date as a readable string for response
-    const day = expiryDate.getDate();
-    const suffix =
-      day % 10 === 1 && day !== 11
-        ? "st"
-        : day % 10 === 2 && day !== 12
-          ? "nd"
-          : day % 10 === 3 && day !== 13
-            ? "rd"
-            : "th";
-    const formattedExpiryDate = `${day}${suffix} ${expiryDate.toLocaleString("en-US", { month: "long" })} ${expiryDate.getFullYear()}`;
-
+ 
     // Emit notifications after successful payment
-    await emitNotification({
-      userId: user._id,
-      userMsg: `You successfully purchased the subscription! It is valid until ${formattedExpiryDate}.`,
+    // await emitNotification({
+    //   userId: user._id,
+    //   userMsg: `You successfully purchased the subscription! It is valid until ${formattedExpiryDate}.`,
 
-      adminMsg: `${user.name} purchased a  subscription with the transaction ID: "${transactionId}".`,
-    });
+    //   adminMsg: `${user.firstName} purchased a  subscription with the transaction ID: "${transactionId}".`,
+    // });
 
     // Send success response with the formatted expiry date
     return sendResponse(res, {
       statusCode: httpStatus.CREATED,
       success: true,
       message: "Payment completed successfully!",
-      data: {
-        ...newPayment.toObject(),
-        expiryDate: formattedExpiryDate, // Send the formatted expiry date in the response
-      },
-      pagination: undefined,
+      data: null
     });
   } catch (error) {
     console.error("Error during payment processing:", error);

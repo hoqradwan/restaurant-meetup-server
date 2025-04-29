@@ -7,7 +7,7 @@ import {
   updatePrivacyInDB,
 } from "./Privacy.service";
 import sendResponse from "../../utils/sendResponse";
-import { findUserById } from "../User/user.service";
+import { findUserById } from "../user/user.service";
 import catchAsync from "../../utils/catchAsync";
 
 import sanitizeHtml from "sanitize-html";
@@ -65,7 +65,7 @@ export const createPrivacy = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Check if the user is an admin
-  if (user.role !== "admin") {
+  if ((user.role as string) !== "admin") {
     return sendError(res, httpStatus.FORBIDDEN, {
       message: "Only admins can create terms.",
     });
@@ -122,7 +122,7 @@ export const updatePrivacy = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Check if the user is an admin
-  if (user.role !== "admin") {
+  if ((user.role as string) !== "admin") {
     return sendError(res, httpStatus.FORBIDDEN, {
       message: "Only admins can update privacy.",
     });

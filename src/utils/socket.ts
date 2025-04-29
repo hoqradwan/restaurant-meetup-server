@@ -1,6 +1,6 @@
 import { Server as HttpServer } from "http";
 import { Server as SocketIOServer, Socket } from "socket.io";
-import { UserModel } from "../modules/User/user.model";
+import { UserModel } from "../modules/user/user.model";
 import { NotificationModel } from "../modules/notifications/notification.model";
 import { INotification } from "../modules/notifications/notification.interface";
 
@@ -41,50 +41,7 @@ export const initSocketIO = async (server: HttpServer): Promise<void> => {
   });
 };
 
-// Emit Notification to User and Admin
-// export const emitNotification = async ({
-//   userId,
-//   userMsg,
-//   adminMsg,
-// }: {
-//   userId: string;
-//   userMsg: ILocalizedString;
-//   adminMsg: ILocalizedString;
-// }): Promise<void> => {
-//   if (!io) {
-//     throw new Error("Socket.IO is not initialized");
-//   }
 
-//   // Get admin IDs
-//   const admins = await UserModel.find({ role: "admin" }).select("_id");
-//   const adminIds = admins.map((admin) => admin._id.toString());
-
-//   // Notify the specific user
-//   if (userMsg) {
-//     io.emit(`notification::${userId}`, {
-//       userId,
-//       message: userMsg,
-//     });
-//   }
-
-//   // Notify all admins
-//   if (adminMsg) {
-//     adminIds.forEach((adminId) => {
-//       io.emit(`notification::${adminId}`, {
-//         adminId,
-//         message: adminMsg,
-//       });
-//     });
-//   }
-
-//   // Save notification to the database
-//   await NotificationModel.create<INotification>({
-//     userId,
-//     adminId: adminIds,
-//     adminMsg: adminMsg,
-//     userMsg: userMsg ,
-//   });
-// };
 export const emitNotification = async ({
   userId,
   userMsg,
@@ -99,7 +56,7 @@ export const emitNotification = async ({
   }
 
   // Get admin IDs
-  const admins = await UserModel.find({ role: "admin" }).select("_id");
+  const admins = await UserModel.find({ role: "admin" }).select("_id") as { _id: string }[];
   const adminIds = admins.map((admin) => admin._id.toString());
 
   // Notify the specific user
@@ -140,7 +97,7 @@ export const emitNotificationForCreateStickers = async ({
   }
 
   // Get all users with role "user" (exclude admins)
-  const users = await UserModel.find({ role: "user" }).select("_id");
+  const users = await UserModel.find({ role: "user" }).select("_id") as { _id: string }[];
   const userIds = users.map((user) => user._id.toString());
 
   // Notify all users

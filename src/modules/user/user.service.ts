@@ -1,37 +1,56 @@
 import bcrypt from "bcrypt";
-
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { IUser, IPendingUser } from "./user.interface";
 
-import { OTPModel, PendingUserModel, UserModel } from "./user.model";
+import { OTPModel, PendingUserModel, RestaurantModel, UserModel } from "./user.model";
 import {
   JWT_SECRET_KEY,
   Nodemailer_GMAIL,
   Nodemailer_GMAIL_PASSWORD,
 } from "../../config";
-import AppError from "../../errors/AppError";
-import httpStatus from "http-status";
-import mongoose from "mongoose";
 
 export const createUser = async ({
-  name,
+  firstName,
+  lastName,
   email,
   role,
   hashedPassword,
+  establishmentName,
 }: {
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
-  role: string;
+  role : string;
   hashedPassword: string;
-}): Promise<{ createdUser: IUser }> => {
-  const createdUser = await UserModel.create({
-    name,
+  establishmentName : string;
+}) => {
+  let createdUser;
+  if(role ==="restaurant"){
+    const isUserExists = await RestaurantModel.findOne({email});
+    if (isUserExists) {
+      throw new Error("User already exists");
+    }
+    const isEstablishmentNameExists = await RestaurantModel.findOne({establishmentName});
+    if (isEstablishmentNameExists) {
+      throw new Error("Establishment name already exists");
+    }
+     createdUser = await RestaurantModel.create({
+      firstName,
+      lastName,
+      email,
+      establishmentName,
+      password: hashedPassword,
+    });
+    return createdUser;
+  }
+   createdUser = await UserModel.create({
+    firstName,
+    lastName,
     email,
-    role,
     password: hashedPassword,
   });
-  return { createdUser };
+  return createdUser;
 };
 
 export const findUserByEmail = async (email: string): Promise<IUser | null> => {
@@ -61,7 +80,7 @@ export const getUserList = async (
   //const query: any = { _id: { $ne: adminId } };
 
   const query: any = {
-    $and: [{ isDeleted: { $ne: true } }, { _id: { $ne: adminId } },{role: { $ne: "mechanic" }}],
+    $and: [{ isDeleted: { $ne: true } }, { _id: { $ne: adminId } }, { role: { $ne: "mechanic" } }],
   };
 
   if (date) {
@@ -142,18 +161,18 @@ export const sendOTPEmail = async (
   // English and Spanish email content based on the lang parameter
   const emailContent = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #f0f0f0; padding: 20px;">
-      <h1 style="text-align: center; color: #452778; font-family: 'Times New Roman', Times, serif;">
-        Like<span style="color:black; font-size: 0.9em;">Mine</span>
+      <h1 style="text-align: center; color: #ae3cf3; font-family: Arial, sans-serif; font-size: 2em; margin-bottom: 20px;">
+        Gwendolyn<span style="color:black; font-size: 0.9em;"> belfor</span>
       </h1>
       <div style="background-color: white; padding: 20px; border-radius: 5px;">
-        <h2 style="color:#d3b06c">Hello!</h2>
+        <h2 style="color:#7c15e6">Hello!</h2>
         <p>You are receiving this email because we received a registration request for your account.</p>
         <div style="text-align: center; margin: 20px 0;">
           <h3>Your OTP is: <strong>${otp}</strong></h3>
         </div>
         <p>This OTP will expire in 10 minutes.</p>
         <p>If you did not request this, no further action is required.</p>
-        <p>Regards,<br>LikeMine</p>
+        <p>Regards,<br>gwendolynbelfor</p>
       </div>
       <p style="font-size: 12px; color: #666; margin-top: 10px;">If you're having trouble copying the OTP, please try again.</p>
     </div>
@@ -189,75 +208,7 @@ export const userDelete = async (id: string): Promise<void> => {
 
 const AVERAGE_SPEED_KMPH = 30; // Adjust based on your use case
 
-export const getDistanceAndETA = async (userId: string, mechanicId: string) => {
-  console.log("in distance")
-  const user = await UserModel.findById(userId);
-  // if (!user || !user.location || !user.location.lat || !user.location.lng) {
-  //   throw new AppError(httpStatus.BAD_REQUEST, "User or location not found");
-  // }
 
-  // Find the mechanic user
-  const mechanicUser = await UserModel.findById(mechanicId);
-
-  console.log(mechanicUser)
-
-  // if (
-  //   !mechanicUser ||
-  //   !mechanicUser.location ||
-  //   !mechanicUser.location.lat ||
-  //   !mechanicUser.location.lng
-  // ) {
-  //   throw new AppError(httpStatus.BAD_REQUEST, "Mechanic or location not found");
-  // }
-
-  // GeoNear needs coordinates in GeoJSON format
-  const geoNearResult = await UserModel.aggregate([
-    {
-      $geoNear: {
-        near: {
-          type: "Point",
-          coordinates: [user?.location.coordinates[0], user?.location.coordinates[1]],
-        },
-        key: "location", // your user schema should have index on `location`
-        query: { _id: new mongoose.Types.ObjectId(mechanicUser._id) },
-        distanceField: "distanceInMeters",
-        spherical: true,
-      },
-    },
-    {
-      $project: {
-        _id: 1,
-        name: 1,
-        distanceInKm: { $divide: ["$distanceInMeters", 1000] },
-      },
-    },
-    {
-      $addFields: {
-        estimatedTimeInMinutes: {
-          $ceil: {
-            $divide: [
-              { $multiply: ["$distanceInKm", 60] },
-              AVERAGE_SPEED_KMPH,
-            ],
-          },
-        },
-      },
-    },
-  ]);
-
-  if (!geoNearResult.length) {
-    throw new AppError(httpStatus.NOT_FOUND, "Mechanic not found nearby");
-  }
-
-  const result = geoNearResult[0];
-
-  return {
-    mechanicId: result._id,
-    mechanicName: result.name,
-    distance: `${result.distanceInKm.toFixed(2)} km`,
-    eta: `${result.estimatedTimeInMinutes} mins`,
-  };
-};
 //   const user = await UserModel.findById(userId);
 //   const mechanicData = await Mechanic.findById(mechanicId).populate("user");
 

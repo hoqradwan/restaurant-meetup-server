@@ -1,23 +1,23 @@
-import { UserModel } from "../modules/User/user.model";
-import { hashPassword } from "../modules/User/user.service";
+import { AdminModel, UserModel } from "../modules/user/user.model";
+import { hashPassword } from "../modules/user/user.service";
 
 const admin = {
-  name: "MD Admin",
+  firstName: "Admin",
+  lastName: "baba",
   email: "admin@gmail.com",
   password: "1qazxsw2",
-  role: "admin",
   isDeleted: false,
 };
 
 export const seedSuperAdmin = async () => {
-  const isSuperAdminExists = await UserModel.findOne({ email: admin.email });
+  const isSuperAdminExists = await AdminModel.findOne({ email: admin.email });
 
   if (!isSuperAdminExists) {
     const hashedPassword = await hashPassword(admin.password);
     const adminWithHashedPassword = { ...admin, password: hashedPassword };
 
     // console.log("Super Admin created");
-    await UserModel.create(adminWithHashedPassword);
+    await AdminModel.create(adminWithHashedPassword);
   }
 };
 

@@ -12,7 +12,6 @@ import {
   findUserById,
   generateOTP,
   generateToken,
-  getDistanceAndETA,
   getStoredOTP,
   getUserList,
   getUserRegistrationDetails,
@@ -32,16 +31,14 @@ import {
   Nodemailer_GMAIL,
   Nodemailer_GMAIL_PASSWORD,
 } from "../../config";
-// import { emitNotification } from "../../utils/socket";
 import httpStatus from "http-status";
 import { CustomRequest } from "../../utils/customRequest";
 
 export const registerUser = catchAsync(async (req: Request, res: Response) => {
-  const { name, email, password, confirmPassword, role } = req.body;
-  const validationError = validateUserInput(name, email, password,role);
+  const { firstName, lastName, email, password, confirmPassword, role } = req.body;
+  const validationError = validateUserInput(firstName, lastName, email, password, role);
 
   if (validationError) {
-    
     return sendError(res, httpStatus.BAD_REQUEST, validationError);
   }
 
@@ -58,11 +55,27 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
       message: "You already have an account.",
     });
   }
-
+  if(role === "restaurant"){
+    const establishmentName = req.body.establishmentName;
+    await PendingUserModel.findOneAndUpdate(
+      { email },
+      {
+        firstName,
+        lastName,
+        email,
+        role,
+        password,
+        establishmentName,
+        confirmPassword,
+      },
+      { upsert: true },
+    );
+  }
   await PendingUserModel.findOneAndUpdate(
     { email },
     {
-      name,
+      firstName,
+      lastName,
       email,
       role,
       password,
@@ -160,16 +173,10 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
 
   const token = generateToken({
     id: user._id,
-    name: user.name,
     email: user.email,
     role: user.role,
-    image: user?.image,
     age: user?.age,
     gender: user?.gender,
-    bio: user?.bio,
-    about: user?.about,
-    address: user?.address,
-    phone: user?.phone,
   });
 
   sendResponse(res, {
@@ -177,19 +184,7 @@ export const loginUser = catchAsync(async (req: Request, res: Response) => {
     success: true,
     message: "Login complete!",
     data: {
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        image: user?.image,
-        age: user?.age,
-        gender: user?.gender,
-        bio: user?.bio,
-        about: user?.about,
-        address: user?.address,
-        phone: user?.phone,
-      },
+      user: user,
       token,
     },
   });
@@ -269,8 +264,8 @@ export const forgotPassword = catchAsync(
 );
 
 export const resetPassword = catchAsync(async (req: Request, res: Response) => {
- 
-const email = req.query.email as string;
+
+  const email = req.query.email as string;
 
   const { password, confirmPassword } = req.body;
 
@@ -331,21 +326,22 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const { name, password, role } = (await getUserRegistrationDetails(
+  const { firstName, lastName, password, role,establishmentName } = (await getUserRegistrationDetails(
     email,
   )) as IPendingUser;
   //console.log(objective, "objective from controller");
   const hashedPassword = await hashPassword(password);
 
-  const { createdUser } = await createUser({
-    name,
+  const result = await createUser({
+    firstName: String(firstName),
+    lastName: String(lastName),
     email,
     role,
+    establishmentName,
     hashedPassword,
   });
 
-  const userMsg = "Welcome to LikeMine_App.";
-  const adminMsg = `${name} has successfully registered.`;
+
 
   // await emitNotification({
   //   userId: createdUser._id as string,
@@ -357,7 +353,7 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     statusCode: httpStatus.CREATED,
     success: true,
     message: "Registration successful.",
-    data: null,
+    data: result,
   });
 });
 
@@ -536,7 +532,7 @@ export const getSelfInfo = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const getAllUsers = catchAsync(async (req: CustomRequest, res: Response) => {
-  const {id : adminId} = req.user;
+  const { id: adminId } = req.user;
 
   // Pagination parameters
   const page = parseInt(req.query.page as string) || 1;
@@ -578,66 +574,7 @@ export const getAllUsers = catchAsync(async (req: CustomRequest, res: Response) 
   });
 });
 
-export const BlockUser = catchAsync(async (req: Request, res: Response) => {
-  const { userId } = req.body;
-  const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return sendError(res, httpStatus.UNAUTHORIZED, {
-      message: "No token provided or invalid format.",
-    });
-  }
-
-  const token = authHeader.split(" ")[1];
-  const decoded = jwt.verify(token, JWT_SECRET_KEY as string) as {
-    id: string;
-  };
-  const adminId = decoded.id;
-
-  const requestingUser = await UserModel.findById(adminId);
-
-  if (!requestingUser || requestingUser.role !== "admin") {
-    return sendError(res, httpStatus.FORBIDDEN, {
-      message: "Unauthorized: Only admins can change user status.",
-    });
-  }
-
-  const user = await UserModel.findById(userId);
-  if (!user) {
-    return sendError(res, httpStatus.NOT_FOUND, {
-      message: "User not found.",
-    });
-  }
-
-  if (user.role === "admin") {
-    return sendError(res, httpStatus.FORBIDDEN, {
-      message: "Cannot change status of an admin user.",
-    });
-  }
-
-  // Toggle the status
-  user.status = user.status === "active" ? "blocked" : "active";
-  await user.save();
-
-  const userMsg =
-    user.status === "blocked"
-      ? "Your account has been blocked by an admin."
-      : "Your account has been unblocked by an admin.";
-
-  // Uncomment this when you're ready to use the notification function
-  // await emitNotificationForChangeUserRole({
-  //   userId,
-  //   userMsg,
-  // });
-
-  return sendResponse(res, {
-    statusCode: httpStatus.OK,
-    success: true,
-    message: `User status changed to ${user.status} successfully.`,
-    data: null,
-    pagination: undefined,
-  });
-});
 
 export const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const id = req.query?.id as string;
@@ -681,7 +618,7 @@ export const adminloginUser = catchAsync(
     // }
 
     const user = await findUserByEmail(email);
-    console.log({user})
+    console.log({ user })
     if (!user) {
       return sendError(res, httpStatus.NOT_FOUND, {
         message:
@@ -694,7 +631,7 @@ export const adminloginUser = catchAsync(
 
     // check admin or not
     //  console.log(user,"user")
-    if (user.role !== "admin") {
+    if (user.role && (user.role as string) !== "admin") {
       return sendError(res, httpStatus.FORBIDDEN, {
         message:
           // lang === "es"
@@ -720,10 +657,8 @@ export const adminloginUser = catchAsync(
     // Generate new token for the logged-in user
     const newToken = generateToken({
       id: user._id,
-      name: user.name,
       email: user.email,
       role: user.role,
-      image: user?.image,
       // lang: lang,
     });
 
@@ -737,7 +672,6 @@ export const adminloginUser = catchAsync(
       data: {
         user: {
           id: user._id,
-          name: user.name,
           email: user.email,
           role: user.role,
           image: user?.image,
@@ -763,7 +697,7 @@ export const resturantloginUser = catchAsync(
     // }
 
     const user = await findUserByEmail(email);
-    console.log({user})
+    console.log({ user })
     if (!user) {
       return sendError(res, httpStatus.NOT_FOUND, {
         message:
@@ -776,7 +710,7 @@ export const resturantloginUser = catchAsync(
 
     // check admin or not
     //  console.log(user,"user")
-    if (user.role !== "mechanic") {
+    if (user.role && user.role !== ("restaurant" as typeof user.role)) {
       return sendError(res, httpStatus.FORBIDDEN, {
         message:
           // lang === "es"
@@ -802,7 +736,6 @@ export const resturantloginUser = catchAsync(
     // Generate new token for the logged-in user
     const newToken = generateToken({
       id: user._id,
-      name: user.name,
       email: user.email,
       role: user.role,
       image: user?.image,
@@ -819,7 +752,6 @@ export const resturantloginUser = catchAsync(
       data: {
         user: {
           id: user._id,
-          name: user.name,
           email: user.email,
           role: user.role,
           image: user?.image,
@@ -830,22 +762,3 @@ export const resturantloginUser = catchAsync(
   },
 );
 
-
-export const getUserToMechanicDistance = async (req: Request, res: Response) => {
-  try {
-    const { userId, mechanicId } = req.params;
-    const result = await getDistanceAndETA(userId, mechanicId);
-
-    return res.status(200).json({
-      success: true,
-      message: "Distance and ETA fetched successfully",
-      data: result,
-    });
-  } catch (error: any) {
-    console.error("Error in getUserToMechanicDistance:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: error.message || "Internal Server Error",
-    });
-  }
-};

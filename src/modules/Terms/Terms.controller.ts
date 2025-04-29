@@ -7,12 +7,13 @@ import {
   updateTermsInDB,
 } from "./Terms.service";
 import sendResponse from "../../utils/sendResponse";
-import { findUserById } from "../User/user.service";
+import { findUserById } from "../user/user.service";
 import catchAsync from "../../utils/catchAsync";
 
 import sanitizeHtml from "sanitize-html";
 import { JWT_SECRET_KEY } from "../../config";
 import { Request, Response } from "express";
+import { IBaseUser } from "../user/user.interface";
 
 const sanitizeOptions = {
   allowedTags: [
@@ -65,7 +66,7 @@ export const createTerms = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Check if the user is an admin
-  if (user.role !== "admin") {
+  if ((user as IBaseUser).role !== "admin") {
     return sendError(res, httpStatus.FORBIDDEN, {
       message: "Only admins can create terms.",
     });
@@ -122,11 +123,11 @@ export const updateTerms = catchAsync(async (req: Request, res: Response) => {
   }
 
   // Check if the user is an admin
-  if (user.role !== "admin") {
-    return sendError(res, httpStatus.FORBIDDEN, {
-      message: "Only admins can update terms.",
-    });
-  }
+  // if (user.role !== "admin") {
+  //   return sendError(res, httpStatus.FORBIDDEN, {
+  //     message: "Only admins can update terms.",
+  //   });
+  // }
 
   // Sanitize the description field
   const { description } = req.body;

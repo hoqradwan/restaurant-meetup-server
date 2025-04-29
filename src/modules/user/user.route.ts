@@ -12,10 +12,9 @@ import {
   updateUser,
   getSelfInfo,
   getAllUsers,
-  BlockUser,
   deleteUser,
   adminloginUser,
-  getUserToMechanicDistance,
+  
   resturantloginUser,
 } from "./user.controller";
 import upload from "../../middlewares/fileUploadNormal";
@@ -40,9 +39,6 @@ router.post("/update", upload.single("image"), updateUser);
 
 router.get("/my-profile", getSelfInfo);
 router.get("/all", adminMiddleware("admin"), getAllUsers);
-router.get("/:userId/:mechanicId", getUserToMechanicDistance);
-
-router.post("/block-user", adminMiddleware("admin"), BlockUser);
 
 router.post("/delete", adminMiddleware("admin"), deleteUser);
 

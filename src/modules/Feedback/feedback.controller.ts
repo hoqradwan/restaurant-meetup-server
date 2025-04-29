@@ -3,7 +3,7 @@ import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
 import sendResponse from "../../utils/sendResponse";
 import { Request, Response } from "express";
-import { findUserById } from "../User/user.service";
+import { findUserById } from "../user/user.service";
 import { JWT_SECRET_KEY } from "../../config";
 import jwt from "jsonwebtoken";
 import { createFeedback, feedbackList } from "./feedback.service";
@@ -38,7 +38,7 @@ export const giveFeedback = catchAsync(async (req: Request, res: Response) => {
     });
   }
   // Create feedback
-  const name = user.name;
+  const name = user.firstName;
   const email = user.email;
 
   const addFeedback = await createFeedback({

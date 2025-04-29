@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 
 import { Request, Response } from "express";
 
-import { findUserById } from "../User/user.service";
+import { findUserById } from "../user/user.service";
 import { NotificationModel } from "./notification.model";
 import catchAsync from "../../utils/catchAsync";
 import sendError from "../../utils/sendError";
@@ -46,7 +46,7 @@ export const getMyNotification = catchAsync(
       let notifications;
       let totalNotifications;
 
-      if (user.role === "admin") {
+      if ((user.role as string) === "admin") {
         // For admin, fetch all admin messages
         notifications = await NotificationModel.find({
           adminMsg: { $exists: true },
@@ -79,7 +79,7 @@ export const getMyNotification = catchAsync(
       const formattedNotifications = notifications.map((notification) => ({
         _id: notification._id,
         msg:
-          user.role === "admin" ? notification.adminMsg : notification.userMsg,
+          (user.role as string) === "admin" ? notification.adminMsg : notification.userMsg,
         createdAt: notification.createdAt,
         updatedAt: notification.updatedAt,
       }));

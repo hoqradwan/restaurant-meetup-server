@@ -6,7 +6,8 @@ interface ValidationResult {
 }
 
 export const validateUserInput = (
-  name: string,
+  firstName: string,
+  lastName: string,
   email: string,
   password: string,
   role : string
@@ -14,7 +15,7 @@ export const validateUserInput = (
 
   // console.log({name,email,password});
 
-  if (!name || !email || !password) {
+  if (!firstName || !lastName || !email || !password) {
     return { isOk: false, message: "Please fill all the fields" };
   }
   // if(role !== "mechanic" && role !== "admin"){
