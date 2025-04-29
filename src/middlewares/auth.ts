@@ -6,7 +6,7 @@ interface AuthRequest extends Request {
   user?: jwt.JwtPayload | string;
 }
 
-type Role = "admin" | "user" | "resturant" | undefined;
+type Role = "admin" | "user" | "restaurant" | undefined;
 
 export const adminMiddleware = (role?: Role) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -26,6 +26,7 @@ export const adminMiddleware = (role?: Role) => {
       if (role && (req.user as jwt.JwtPayload)?.role === "admin") {
         return next();
       }
+      console.log(role)
       // Check if the user has the required role
       if (role && (req.user as jwt.JwtPayload).role !== role) {
         return res.status(403).json({

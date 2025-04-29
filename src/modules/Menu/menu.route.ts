@@ -3,6 +3,6 @@ import { adminMiddleware } from '../../middlewares/auth';
 import { createMenu } from './menu.controller';
 const router = express.Router();
 
-router.post("/", adminMiddleware("resturant"), createMenu);
+router.post("/", adminMiddleware("restaurant"), createMenu);
 
-export const MenuRoute = router;
+export const MenuRoutes = router;

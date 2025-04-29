@@ -22,7 +22,7 @@ import {
   userDelete,
 } from "./user.service";
 
-import { OTPModel, PendingUserModel, UserModel } from "./user.model";
+import { OTPModel, PendingUserModel, RestaurantModel, UserModel } from "./user.model";
 
 import { validateUserInput } from "./user.validation";
 import { IPendingUser } from "./user.interface";
@@ -696,9 +696,9 @@ export const resturantloginUser = catchAsync(
     //   });
     // }
 
-    const user = await findUserByEmail(email);
-    console.log({ user })
-    if (!user) {
+    const restaurant = await RestaurantModel.findOne({email});
+    console.log({ restaurant })
+    if (!restaurant) {
       return sendError(res, httpStatus.NOT_FOUND, {
         message:
           // lang === "es"
@@ -710,7 +710,7 @@ export const resturantloginUser = catchAsync(
 
     // check admin or not
     //  console.log(user,"user")
-    if (user.role && user.role !== ("restaurant" as typeof user.role)) {
+    if (restaurant.role && restaurant.role !== ("restaurant" as typeof restaurant.role)) {
       return sendError(res, httpStatus.FORBIDDEN, {
         message:
           // lang === "es"
@@ -723,7 +723,7 @@ export const resturantloginUser = catchAsync(
     // Check password validity
     const isPasswordValid = await bcrypt.compare(
       password,
-      user.password as string,
+      restaurant.password as string,
     );
     if (!isPasswordValid) {
       return sendError(res, httpStatus.UNAUTHORIZED, {
@@ -735,10 +735,9 @@ export const resturantloginUser = catchAsync(
 
     // Generate new token for the logged-in user
     const newToken = generateToken({
-      id: user._id,
-      email: user.email,
-      role: user.role,
-      image: user?.image,
+      id: restaurant._id,
+      email: restaurant.email,
+      role: restaurant.role,
       // lang: lang,
     });
 
@@ -751,10 +750,9 @@ export const resturantloginUser = catchAsync(
         "Login complete!",
       data: {
         user: {
-          id: user._id,
-          email: user.email,
-          role: user.role,
-          image: user?.image,
+          id: restaurant._id,
+          email: restaurant.email,
+          role: restaurant.role,
         },
         token: newToken,
       },

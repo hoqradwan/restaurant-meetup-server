@@ -8,19 +8,21 @@ const menuschema = new Schema({
     image: {
         type: String, // URL or path to photo
         required: true,
+        default : "",
     },
     description: {
         type: String,
-        required: true,
+        default : "",
     },
     price: {
         type: Number,
         required: true,
+        default : 0,
     },
 
     restaurant: {
         type: Schema.Types.ObjectId,
-        ref: 'Restaurant',
+        ref: 'User',
         required: true,
         default : null,
     },

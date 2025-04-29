@@ -28,7 +28,7 @@ router.post(
 );
 router.post("/login", loginUser);
 router.post("/admin-login", adminloginUser);
-router.post("/resturant-login", resturantloginUser);
+router.post("/restaurant-login", resturantloginUser);
 router.post("/forget-password", forgotPassword);
 router.post("/reset-password", resetPassword);
 router.post("/verify-otp", verifyOTP);

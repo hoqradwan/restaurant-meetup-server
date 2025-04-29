@@ -7,10 +7,12 @@ import { NotificationRoutes } from "../modules/notifications/notification.route"
 import { feedBackRoutes } from "../modules/Feedback/feedback.route";
 import { paymentRoutes } from "../modules/payment/payment.route";
 import { PostRoutes } from "../modules/Post/post.route";
+import { MenuRoutes } from "../modules/Menu/menu.route";
 
 const router = express.Router();
 
 router.use("/api/v1/user", UserRoutes);
+router.use("/api/v1/menu", MenuRoutes);
 router.use("/api/v1/post", PostRoutes);
 router.use("/api/v1/terms", TermsRoutes);
 router.use("/api/v1/about", AboutRoutes);
