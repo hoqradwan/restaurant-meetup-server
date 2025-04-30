@@ -2,16 +2,16 @@ import { Schema, model, Types } from 'mongoose';
 
 const InviteSchema = new Schema(
     {
-        image: { type: String, required: false },
+        image: { type: String, required: true , default : ""},
         appointmentDate: { type: Date, required: true },
         time: { type: String, required: true },
         duration: { type: Number, required: true }, // Duration in minutes
-        expirationDateTime: { type: Date, required: true },
+        expirationDate: { type: Date, required: true },
+        expirationTime: { type: String, required: true },
         agenda: { type: String, required: true },
-        // fbUrl: { type: String, required: false },
-        // instaUrl: { type: String, required: false },
-        // linkedinUrl: { type: String, required: false },
-        // auto fillup
+        fbUrl: { type: String, required: true, default : "" },
+        instaUrl: { type: String, required: true, default : "" },
+        linkedinUrl: { type: String, required: true, default : "" },
         participants: [
             {
                 type: Types.ObjectId,
@@ -24,11 +24,16 @@ const InviteSchema = new Schema(
             ref: 'Restaurant',
             required: true,
         },
-        menuItem: {
+        user: {
+            type: Types.ObjectId,
+            ref: 'Restaurant',
+            required: true,
+        },
+        menuItems: [{
             type: Types.ObjectId,
             ref: 'Menu',
             required: true,
-        },
+        }],
         contribution: {
             type: String,
             enum: ['Each pay their own', 'Organizer pay for all', 'Participants pay organizer'],

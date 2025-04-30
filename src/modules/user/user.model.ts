@@ -109,6 +109,7 @@ const BaseUserModel = model<IBaseUser>("User", BaseUserSchema);
 // Restaurant Schema
 const RestaurantSchema = extendSchema(BaseUserSchema, {
   establishmentName: { type: String, required: true, trim: true },
+
 });
 
 // Register discriminator
