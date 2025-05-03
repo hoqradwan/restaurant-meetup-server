@@ -1,7 +1,7 @@
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import Invite from "./invite.model";
-import { formatTime } from "./invite.utils";
+import { formatTime, generateTicketNumber } from "./invite.utils";
 
 export const createInviteIntoDB = async (inviteData: any, userId: string, image: string) => {
     const {  appointmentDate, time, duration, restaurant, expirationDate, expirationTime, agenda, participants, menuItems, contribution, amount } = inviteData;
@@ -44,11 +44,12 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             if (!menuItem) {
                 throw new Error(`Menu item not found`);
             }
-            return menuItem._id;
+            return menuItem;
         })
     )
-
-
-    const invite = await Invite.create({ ...inviteData, image, user: user._id, fbUrl: user.facebookUrl, menuItems: menuItemsIds, instaUrl: user.instagramUrl, linkedinUrl: user.linkedinUrl, time: formattedTime, expirationTime: formattedExpirationTime, participants: participantIds, restaurant });
+  
+    const ticketNumber = generateTicketNumber();
+    const invite = await Invite.create({ ...inviteData, ticketNumber, image, user: user._id, fbUrl: user.facebookUrl, menuItems: menuItemsIds, instaUrl: user.instagramUrl, linkedinUrl: user.linkedinUrl, time: formattedTime, expirationTime: formattedExpirationTime, participants: participantIds, restaurant });
     return invite;
 }
+

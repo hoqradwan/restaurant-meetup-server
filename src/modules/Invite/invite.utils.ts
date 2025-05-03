@@ -8,3 +8,11 @@ export const formatTime = (time: string) => {
     const formattedTime = `${formattedHours}:${formattedMinutes}`;
     return formattedTime;
 };
+
+export function generateTicketNumber(): string {
+    // Generate a random number between 100000 and 999999 (6 digits)
+    const ticketNumber = Math.floor(Math.random() * 900000) + 100000;
+  
+    return ticketNumber.toString();
+  }
+    
