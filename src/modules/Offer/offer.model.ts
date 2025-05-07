@@ -14,6 +14,8 @@ const OfferSchema = new Schema({
         religion: { type: String, required: true },
         interest: { type: String, required: true },
     },
+    restaurant: { type: Types.ObjectId, ref: 'Restaurant', required: true },
+    menuItem: [{ type: Types.ObjectId, ref: 'Menu', required: true }],
 
 }, { timestamps: true });
 

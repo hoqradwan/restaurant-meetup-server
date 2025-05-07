@@ -7,7 +7,9 @@ import { createInviteIntoDB } from "./invite.service";
 
 export const createInvite = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId } = req.user;
+    console.log("User ID:", userId);
     const formattedInviteData = JSON.parse(req.body.data);
+   
     const result = await createInviteIntoDB(formattedInviteData, userId, req.body.image);
     sendResponse(res, {
         statusCode: 201,

@@ -4,7 +4,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
     image: { type: String, required: true, default: "" },
     appointmentDate: { type: Date, required: true },
     description: { type: String, required: true },
-    time: { type: String, required: true },
+    appointmentTime: { type: String, required: true },
     duration: { type: Number, required: true }, // Duration in minutes
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
@@ -17,7 +17,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
         enum: ['Each pay their own', 'Organizer pay for all', 'Participants pay organizer'],
         required: true,
     },
-    extraCharge: {
+    extraChargeType: {
         type: String,
         enum: ['Organizer Pay Participant', 'Participant Pays Organizer'],
         required: true,
@@ -34,8 +34,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
         enum: ['Offer', 'Invite'],
         required: true,
     },
-    restaurant: { type: Types.ObjectId, ref: 'Restaurant', required: true },
-    menuItem: [{ type: Types.ObjectId, ref: 'Menu', required: true }],
+    
 }, { timestamps: true });
 
 // Export the model
