@@ -60,6 +60,10 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 if (!participant) {
                     throw new Error(`Participant user with ID ${p.user} not found`);
                 }
+                const hasSendInviteAlready = await Invite.findOne({ user: user._id, participants: { $elemMatch: { user: participant._id } }, restaurant }).session(session);
+                if (hasSendInviteAlready) {
+                    throw new Error(`This participant has already been invited by you to this restaurant`);
+                }
                 return {
                     user: participant._id,
                     selectedMenuItems: []
@@ -67,8 +71,8 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             })
         );
         let organizerTotalAmount = 0;
-       const organizerMenuItemsExist = await Promise.all(
-        organizerMenuItems.map(async (menuItemId: string) => {
+        const organizerMenuItemsExist = await Promise.all(
+            organizerMenuItems.map(async (menuItemId: string) => {
                 const menuItem = await Menu.findById(menuItemId).session(session);
                 if (!menuItem) {
                     throw new Error(`Menu item with ID ${menuItemId} not found`);
@@ -109,27 +113,161 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         if (!commonDetailsOfferOrInvite) {
             throw new Error("Failed to create common details for invite");
         }
-        let participantsInPrecessTmp: { user: any; amountToPay: number ; status: string;}[] = [];
+        let participantsInPrecessTmp: { user: any; amountToPay: number; extraChargeAmountToGet: number; extraChargeAmountToPay: number; status: string; }[] = [];
         let UserInvitationProcess;
         if (contribution === "Each pay their own") {
-         
-            participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, status: "Accepted" });   
-            UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: participantsInPrecessTmp }], { session });
+            if (extraChargeType === "Organizer pays participants") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: eachParticipantAmount,
+                            extraChargeAmountToPay: 0,
+                            status: "Pending"
+                        };
+                    })
+                );
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            } else if (extraChargeType === "Participants pay organizer") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: 0,
+                            extraChargeAmountToPay: eachParticipantAmount,
+                            status: "Pending"
+                        };
+                    })
+                );
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            }
+
+            // const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+            // if (!userWallet || userWallet.totalBalance < organizerTotalAmount) {
+            //     throw new Error("Insufficient wallet balance for the user");
+            // }
+            // const cutWalletBalance = await Wallet.findOneAndUpdate({ user: user._id }, { $inc: { balance: -organizerTotalAmount } }, { new: true, session });
+            // if (!cutWalletBalance) {
+            //     throw new Error("Failed to update wallet balance for the user");
+            // }
 
         } else if (contribution === "Organizer pay for all") {
-            participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, status: "Accepted" });   
-            UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: participantsInPrecessTmp }], { session });
-         
+            if (extraChargeType === "Organizer pays participants") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: eachParticipantAmount,
+                            extraChargeAmountToPay: 0,
+                            status: "Pending"
+                        };
+                    })
+                );
+
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            } else if (extraChargeType === "Participants pay organizer") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: 0,
+                            extraChargeAmountToPay: eachParticipantAmount,
+                            status: "Pending"
+                        };
+                    })
+                );
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            }
+            // const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+            // if (!userWallet || userWallet.totalBalance < organizerTotalAmount) {
+            //     throw new Error("Insufficient wallet balance for the user");
+            // }
+            // const cutWalletBalance = await Wallet.findOneAndUpdate({ user: user._id }, { $inc: { balance: -organizerTotalAmount } }, { new: true, session });
+            // if (!cutWalletBalance) {
+            //     throw new Error("Failed to update wallet balance for the user");
+            // }
         } else if (contribution === "Participants pay organizer") {
-            participantsInPrecessTmp.push({ user: user._id, amountToPay: 0, status: "Accepted" });   
-            UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: participantsInPrecessTmp }], { session });
+            if (extraChargeType === "Organizer pays participants") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: 0, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: eachParticipantAmount,
+                            extraChargeAmountToPay: 0,
+                            status: "Pending"
+                        };
+                    })
+                );
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            } else if (extraChargeType === "Participants pay organizer") {
+                let eachParticipantAmount = extraChargeAmount / participants.length;
+                participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
+                const processingParticipantData = await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: 0,
+                            extraChargeAmountToPay: eachParticipantAmount,
+                            status: "Pending"
+                        };
+                    })
+                ); 
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+            }
+
         }
+
         // Add common details to invite data
-        const inviteDataWithCommonDetails = { participants: participantData, restaurant, commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id };
+        const inviteDataWithCommonDetails = { organizer: user._id, participants: participantData, restaurant, commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id };
 
         // Create the invite document within the transaction
         const invite = await Invite.create([inviteDataWithCommonDetails], { session });
-
+ 
         // Commit the transaction if everything goes well
         await session.commitTransaction();
         session.endSession();
@@ -145,3 +283,39 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
 };
 
 
+/*
+{
+    "appointmentDate": "2025-06-15T18:00:00Z",
+    "appointmentTime": "18:00",
+    "duration": 120,
+    "description": "Dinner Meetup for Networking",
+    "restaurant": "68188f569cbd2e29d869038b",
+    "expirationDate": "2025-06-15T22:00:00Z",
+    "expirationTime": "22:00",
+    "agenda": "Networking, Food, and Fun",
+    "organizerMenuItems": [
+        "6818914f9cbd2e29d86903b3",
+        "681891579cbd2e29d86903b7"
+    ],
+    "participants": [
+        {
+            "user": "6818909f9cbd2e29d86903a7"
+        },
+        {
+            "user": "68188fe79cbd2e29d869039b"
+        }
+    ],
+    "contribution": "Each pay their own",
+    "extraChargeType": "Participants pay organizer",
+    "extraChargeAmount": 200
+}
+
+
+*/
+
+// concerns
+/* 
+- while creating an invite one can be engaged in another invite or offer.
+- organizer cannot send invite to same user and same restaurant second time.
+
+*/

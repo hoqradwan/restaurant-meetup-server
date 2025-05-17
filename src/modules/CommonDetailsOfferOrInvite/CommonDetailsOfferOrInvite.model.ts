@@ -19,7 +19,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
     },
     extraChargeType: {
         type: String,
-        enum: ['Organizer Pay Participant', 'Participant Pays Organizer'],
+        enum: ['Organizer pays participants', 'Participants pay organizer'],
         required: true,
     },
     extraChargeAmount: { type: Number, required: true, default: 0 },

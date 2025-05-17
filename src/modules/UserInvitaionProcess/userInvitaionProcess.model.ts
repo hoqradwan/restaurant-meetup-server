@@ -5,6 +5,8 @@ export const UserInvitationProcessSchema = new Schema({
         {
             user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },
             amountToPay: { type: Number, required: true, default: 0 },
+            extraChargeAmountToPay: { type: Number, required: true, default: 0 },
+            extraChargeAmountToGet: { type: Number, required: true, default: 0 },
             status: { type: String, enum: ['Pending', 'Accepted', 'Declined'], required: true, default: 'Pending' }
         }],
 }, { timestamps: true });
