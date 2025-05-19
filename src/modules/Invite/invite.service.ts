@@ -293,10 +293,14 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         if (!user) {
             throw new Error("User not found");
         }
+        
         // Find the invite and populate commonDetailsOfferOrInvite
         const invite = await Invite.findById(inviteId).session(session).populate("commonDetailsOfferOrInvite");
         if (!invite) {
             throw new Error("Invite not found");
+        }
+        if(invite.organizer.toString() === user._id.toString()){
+            throw new Error("Organizer cannot accept own invite");
         }
         const commonDetails = invite.commonDetailsOfferOrInvite as any;
         if (
@@ -306,6 +310,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         ) {
             throw new Error("Invitation has expired");
         }
+       
         const participant = invite.participants.find((p: any) => p.user.toString() === user._id.toString());
         if (!participant) {
             throw new Error("User is not a participant in this invite");
@@ -329,42 +334,53 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         );
         if (userMenuItemsExist) {
             participant.selectedMenuItems = userMenuItemsExist;
+            await invite.save({ session });
         }
+      
+      
         const userInvitaionProcess = await UserInvitationProcessModel.findOne({ commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite }).session(session);
-        if (!userInvitaionProcess) {
+           if (!userInvitaionProcess) {
             throw new Error("User invitation process not found");
         }
+        const alreadyaccepted= userInvitaionProcess?.participantsInProcess.find((p: any) => p.user.toString() === user._id.toString() && p.status === "Paid");
+        if (alreadyaccepted) {
+            throw new Error("You have already accepted this invite");
+        }
+      
         for (const p of userInvitaionProcess.participantsInProcess) {
             if (p.user.toString() === user._id.toString()) {
-                if (p.extraChargeAmountToGet > 0) {
-                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-                    if (userWallet && userWallet.totalBalance < userTotalAmount) {
-                        throw new Error("Insufficient balance");
-                    }
-                    await Wallet.findOneAndUpdate(
-                        { user: user._id },
-                        { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
-                        { new: true, session }
-                    );
-                    p.status = "Paid";
-                    p.amountToPay = userTotalAmount;
-
-                } else if (p.extraChargeAmountToPay > 0) {
-                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-                    const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
-                    if (userWallet && userWallet.totalBalance < hasToPay) {
-                        throw new Error("Insufficient balance");
-                    }
-                    await Wallet.findOneAndUpdate(
-                        { user: user._id },
-                        { $inc: { totalBalance: -hasToPay } },
-                        { new: true, session }
-                    );
-                    p.status = "Paid";
-                    p.amountToPay = hasToPay;
+            if (p.extraChargeAmountToGet > 0) {
+                const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                if (userWallet && userWallet.totalBalance < userTotalAmount) {
+                throw new Error("Insufficient balance");
                 }
+                await Wallet.findOneAndUpdate(
+                { user: user._id },
+                { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
+                { new: true, session }
+                );
+                p.status = "Paid";
+                p.amountToPay = userTotalAmount;
+
+            } else if (p.extraChargeAmountToPay > 0) {
+                const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
+                if (userWallet && userWallet.totalBalance < hasToPay) {
+                throw new Error("Insufficient balance");
+                }
+                await Wallet.findOneAndUpdate(
+                { user: user._id },
+                { $inc: { totalBalance: -hasToPay } },
+                { new: true, session }
+                );
+                p.status = "Paid";
+                p.amountToPay = hasToPay;
+            }
             }
         }
+
+        // Save the updated participantsInProcess array back to the UserInvitationProcessModel
+        await userInvitaionProcess.save({ session });
 
 
         // Commit the transaction if everything goes well
@@ -377,13 +393,10 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         await session.abortTransaction();
         session.endSession();
 
-        throw error;  // Re-throw the error to be handled by the caller
+        throw error;  
     }
 }
-/*
 
-
-*/
 
 /*
 {

@@ -20,7 +20,7 @@ export const createInvite = catchAsync(async (req: CustomRequest, res: Response)
 
 export const acceptInvite = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId } = req.user;
-    const { InviteData } = req.body;
+    const InviteData  = req.body;
 
     // Assuming you have a function to handle the acceptance of the invite
     const result = await acceptInviteInDB(InviteData, userId);
