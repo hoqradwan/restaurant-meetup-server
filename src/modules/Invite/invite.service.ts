@@ -2,6 +2,7 @@ import { CommonDetailsOfferOrInvite } from "../CommonDetailsOfferOrInvite/Common
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
+import Wallet from "../Wallet/wallet.model";
 import Invite from "./invite.model";
 import { formatTime, generateTicketNumber } from "./invite.utils";
 import mongoose from 'mongoose';
@@ -256,7 +257,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                             status: "Pending"
                         };
                     })
-                ); 
+                );
                 UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
@@ -267,7 +268,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
 
         // Create the invite document within the transaction
         const invite = await Invite.create([inviteDataWithCommonDetails], { session });
- 
+
         // Commit the transaction if everything goes well
         await session.commitTransaction();
         session.endSession();
@@ -282,6 +283,107 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
     }
 };
 
+export const acceptInviteInDB = async (inviteData: any, userId: string) => {
+    const { inviteId, userMenuItems } = inviteData
+    const session = await mongoose.startSession(); // Start a session for the transaction
+    session.startTransaction(); // Begin the transaction
+    try {
+        // Find the user
+        const user = await UserModel.findById(userId).session(session) as mongoose.Document & { _id: mongoose.Types.ObjectId };
+        if (!user) {
+            throw new Error("User not found");
+        }
+        // Find the invite and populate commonDetailsOfferOrInvite
+        const invite = await Invite.findById(inviteId).session(session).populate("commonDetailsOfferOrInvite");
+        if (!invite) {
+            throw new Error("Invite not found");
+        }
+        const commonDetails = invite.commonDetailsOfferOrInvite as any;
+        if (
+            commonDetails &&
+            commonDetails.expirationDate &&
+            new Date(commonDetails.expirationDate) < new Date()
+        ) {
+            throw new Error("Invitation has expired");
+        }
+        const participant = invite.participants.find((p: any) => p.user.toString() === user._id.toString());
+        if (!participant) {
+            throw new Error("User is not a participant in this invite");
+        }
+        const restaurantIdToVerify = invite.restaurant;
+        let userTotalAmount: number = 0;
+        const userMenuItemsExist = await Promise.all(
+            userMenuItems.map(async (menuItemId: string) => {
+                const menuItem = await Menu.findById(menuItemId).session(session);
+                if (!menuItem) {
+                    throw new Error(`Menu item with ID ${menuItemId} not found`);
+                }
+                // Verify the restaurant ID matches
+                if (menuItem.restaurant.toString() !== restaurantIdToVerify.toString()) {
+                    throw new Error(`Menu item with ID ${menuItemId} does not belong to restaurant ${restaurantIdToVerify}`);
+                }
+                const price = menuItem.price;
+                userTotalAmount += price;
+                return menuItem._id;
+            })
+        );
+        if (userMenuItemsExist) {
+            participant.selectedMenuItems = userMenuItemsExist;
+        }
+        const userInvitaionProcess = await UserInvitationProcessModel.findOne({ commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite }).session(session);
+        if (!userInvitaionProcess) {
+            throw new Error("User invitation process not found");
+        }
+        for (const p of userInvitaionProcess.participantsInProcess) {
+            if (p.user.toString() === user._id.toString()) {
+                if (p.extraChargeAmountToGet > 0) {
+                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                    if (userWallet && userWallet.totalBalance < userTotalAmount) {
+                        throw new Error("Insufficient balance");
+                    }
+                    await Wallet.findOneAndUpdate(
+                        { user: user._id },
+                        { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
+                        { new: true, session }
+                    );
+                    p.status = "Paid";
+                    p.amountToPay = userTotalAmount;
+
+                } else if (p.extraChargeAmountToPay > 0) {
+                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                    const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
+                    if (userWallet && userWallet.totalBalance < hasToPay) {
+                        throw new Error("Insufficient balance");
+                    }
+                    await Wallet.findOneAndUpdate(
+                        { user: user._id },
+                        { $inc: { totalBalance: -hasToPay } },
+                        { new: true, session }
+                    );
+                    p.status = "Paid";
+                    p.amountToPay = hasToPay;
+                }
+            }
+        }
+
+
+        // Commit the transaction if everything goes well
+        await session.commitTransaction();
+        session.endSession();
+
+        return invite;
+    } catch (error) {
+        // Rollback the transaction if an error occurs
+        await session.abortTransaction();
+        session.endSession();
+
+        throw error;  // Re-throw the error to be handled by the caller
+    }
+}
+/*
+
+
+*/
 
 /*
 {

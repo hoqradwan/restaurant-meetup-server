@@ -26,7 +26,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
     ticketNumber: { type: String, required: true, default: "" },
     status: {
         type: String,
-        enum: ['Pending', 'Completed', 'Cancelled'],
+        enum: ['Pending','Ongoing', 'Completed', 'Cancelled'],
         required: true,
     },
     type : {
