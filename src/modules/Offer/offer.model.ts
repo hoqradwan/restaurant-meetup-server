@@ -20,7 +20,6 @@ const OfferSchema = new Schema({
         selectedMenuItems: [{ type: Types.ObjectId, ref: 'Menu', required: true, default: [] }],
     }],
     restaurant: { type: Types.ObjectId, ref: 'Restaurant', required: true },
-    menuItem: [{ type: Types.ObjectId, ref: 'Menu', required: true }],
 
 }, { timestamps: true });
 

@@ -3,12 +3,23 @@ import { formatTime } from "../Invite/invite.utils";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import mongoose from "mongoose";
+import { Offer } from "./offer.model";
 
 export const createOfferIntoDB = async (offerData: any, userId: string, image: string) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount } = offerData;
+        const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, age,
+          } = offerData;
+          const {  education,
+            race,
+            profession,
+            language,
+            height,
+            gender,
+            weight,
+            religion,
+            interest } = offerData.audienceDetails;
 
         // Find the user
         const user = await UserModel.findById(userId).session(session);
@@ -85,10 +96,32 @@ export const createOfferIntoDB = async (offerData: any, userId: string, image: s
         if (!commonDetailsOfferOrInvite) {
             throw new Error("Failed to create common details for invite");
         }
+        const audienceDetailsData = {
+            age,
+            education,
+            race,
+            profession,
+            language,
+            height,
+            gender,
+            weight,
+            religion,
+            interest
+        }
         // TODO: Create and save the offer here using session
+        const offer = await Offer.create([{
+            organizer: user._id,
+            CommonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id,
+            audienceDetails: audienceDetailsData,
+            participants: participantData,
+            restaurant: restaurant,
+        }], { session });
 
         await session.commitTransaction();
         session.endSession();
+        return offer; // return the created offer or any result as needed
+
+
         // return the created offer or any result as needed
     } catch (error) {
         await session.abortTransaction();
@@ -96,3 +129,48 @@ export const createOfferIntoDB = async (offerData: any, userId: string, image: s
         throw error;
     }
 };
+
+
+/* 
+
+{
+  "appointmentDate": "2025-06-01T10:00:00.000Z",
+  "description": "Exclusive networking event for tech professionals.",
+  "appointmentTime": "10:00 AM",
+  "duration": 120,
+  "expirationDate": "2025-06-10T23:59:59.000Z",
+  "expirationTime": "11:59 PM",
+  "agenda": "Keynote speeches, networking, workshops",
+  "fbUrl": "https://facebook.com/tech.event",
+  "instaUrl": "https://instagram.com/tech.event",
+  "linkedinUrl": "https://linkedin.com/company/tech-event",
+  "contribution": "Each pay their own",
+  "extraChargeType": "Participants pay organizer",
+  "extraChargeAmount": 20,
+  "status": "Pending",
+  "type": "Offer",
+    "age": 30,
+    "education": "Bachelor's Degree",
+    "race": "Asian",
+    "profession": "Software Engineer",
+    "language": "English",
+    "height": 175,
+    "gender": "Male",
+    "weight": 70,
+    "religion": "None",
+    "interest": "Technology",
+  "restaurant": "64b3e2f1f1d23b00123a4568",
+  "participants": [
+    {
+      "user": "64b3e2f1f1d23b00123a4567",
+      "selectedMenuItems": ["64b3e2f1f1d23b00123a4569"]
+    },
+    {
+      "user": "64b3e2f1f1d23b00123a456a",
+      "selectedMenuItems": ["64b3e2f1f1d23b00123a4569"]
+    }
+  ]
+}
+
+
+*/

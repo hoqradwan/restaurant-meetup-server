@@ -4,7 +4,7 @@ import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
 import Wallet from "../Wallet/wallet.model";
 import Invite from "./invite.model";
-import { formatTime, generateTicketNumber, processingParticipantData } from "./invite.utils";
+import { formatTime, generateTicketNumber } from "./invite.utils";
 import mongoose from 'mongoose';
 
 
