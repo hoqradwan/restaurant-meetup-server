@@ -23,7 +23,7 @@ const CommonDetailsOfferOrInviteSchema = new Schema({
         required: true,
     },
     extraChargeAmount: { type: Number, required: true, default: 0 },
-    ticketNumber: { type: String, required: true, default: "" },
+    ticketNumber: { type: String,  default: "" },
     status: {
         type: String,
         enum: ['Pending','Ongoing', 'Completed', 'Cancelled'],

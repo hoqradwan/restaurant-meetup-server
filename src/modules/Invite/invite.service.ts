@@ -540,7 +540,6 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                             p.status = "Paid";
                             p.amountToPay = userTotalAmount;
                         }
-
                     }
                 }
             }
