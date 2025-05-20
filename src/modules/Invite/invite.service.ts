@@ -4,7 +4,7 @@ import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
 import Wallet from "../Wallet/wallet.model";
 import Invite from "./invite.model";
-import { formatTime, generateTicketNumber } from "./invite.utils";
+import { formatTime, generateTicketNumber, processingParticipantData } from "./invite.utils";
 import mongoose from 'mongoose';
 
 
@@ -322,12 +322,14 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
 };
 
 export const acceptInviteInDB = async (inviteData: any, userId: string) => {
-    const { inviteId, userMenuItems } = inviteData
+    const { inviteId, userMenuItems } = inviteData;
     const session = await mongoose.startSession(); // Start a session for the transaction
     session.startTransaction(); // Begin the transaction
     try {
         // Find the user
-        const user = await UserModel.findById(userId).session(session) as mongoose.Document & { _id: mongoose.Types.ObjectId };
+        const user = (await UserModel.findById(userId).session(session)) as mongoose.Document & {
+            _id: mongoose.Types.ObjectId;
+        };
         if (!user) {
             throw new Error("User not found");
         }
@@ -341,11 +343,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
             throw new Error("Organizer cannot accept own invite");
         }
         const commonDetails = invite.commonDetailsOfferOrInvite as any;
-        if (
-            commonDetails &&
-            commonDetails.expirationDate &&
-            new Date(commonDetails.expirationDate) < new Date()
-        ) {
+        if (commonDetails && commonDetails.expirationDate && new Date(commonDetails.expirationDate) < new Date()) {
             throw new Error("Invitation has expired");
         }
 
@@ -355,6 +353,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         }
         const restaurantIdToVerify = invite.restaurant;
         let userTotalAmount: number = 0;
+
         const userMenuItemsExist = await Promise.all(
             userMenuItems.map(async (menuItemId: string) => {
                 const menuItem = await Menu.findById(menuItemId).session(session);
@@ -370,17 +369,22 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                 return menuItem._id;
             })
         );
+
         if (userMenuItemsExist) {
             participant.selectedMenuItems = userMenuItemsExist;
             await invite.save({ session });
         }
 
-
-        const userInvitaionProcess = await UserInvitationProcessModel.findOne({ commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite }).session(session);
+        const userInvitaionProcess = await UserInvitationProcessModel.findOne({
+            commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite,
+        }).session(session);
         if (!userInvitaionProcess) {
             throw new Error("User invitation process not found");
         }
-        const alreadyaccepted = userInvitaionProcess?.participantsInProcess.find((p: any) => p.user.toString() === user._id.toString() && p.status === "Paid");
+
+        const alreadyaccepted = userInvitaionProcess.participantsInProcess.find(
+            (p: any) => p.user.toString() === user._id.toString() && p.status === "Paid"
+        );
         if (alreadyaccepted) {
             throw new Error("You have already accepted this invite");
         }
@@ -393,39 +397,151 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                         throw new Error("Insufficient balance");
                     }
                     if (commonDetails.contribution === "Organizer pay for all") {
+                        const organizerParticipant = invite.participants.find(
+                            (p: any) => p.user.toString() === invite.organizer.toString()
+                        );
+                        if (!organizerParticipant) {
+                            throw new Error("Organizer not found");
+                        }
+                        await UserInvitationProcessModel.findOneAndUpdate(
+                            {
+                                "participantsInProcess.user": organizerParticipant.user, // corrected: use organizerParticipant.user, not entire object
+                            },
+                            {
+                                $set: { "participantsInProcess.$.amountToPay": userTotalAmount },
+                            },
+                            { new: true, session }
+                        );
+                        await Wallet.findOneAndUpdate(
+                            { user: user._id },
+                            { $inc: { totalBalance: p.extraChargeAmountToGet } },
+                            { new: true, session }
+                        );
+                    } else if (commonDetails.contribution === "Each pay their own") {
+                        await Wallet.findOneAndUpdate(
+                            { user: user._id },
+                            { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
+                            { new: true, session }
+                        );
+                        await Wallet.findOneAndUpdate(
+                            { user: invite.restaurant },
+                            { $inc: { totalBalance: userTotalAmount } },
+                            { new: true, session }
+                        );
+                        p.status = "Paid";
+                        p.amountToPay = userTotalAmount;
+
+                    } else if (commonDetails.contribution === "Participants pay organizer") {
+                        const organizerParticipant = invite.participants.find(
+                            (p: any) => p.user.toString() === invite.organizer.toString()
+                        );
+                        if (!organizerParticipant) {
+                            throw new Error("Organizer not found");
+                        }
+                        let organizerTotalAmount = 0;
+                        await Promise.all(
+                            organizerParticipant.selectedMenuItems.map(async (menuItemId: any) => {
+                                const menuItem = await Menu.findById(menuItemId.toString()).session(session);
+                                if (!menuItem) {
+                                    throw new Error(`Menu item with ID ${menuItemId} not found`);
+                                }
+                                const price = menuItem.price;
+                                organizerTotalAmount += price;
+                                return menuItem._id;
+                            })
+                        );
+                        const eachParticipantAmount = commonDetails.extraChargeAmount / invite.participants.length - 1;
+                        await Wallet.findOneAndUpdate(
+                            { user: user._id },
+                            { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount) + p.extraChargeAmountToGet } },
+                            { new: true, session }
+                        );
+                        await Wallet.findOneAndUpdate(
+                            { user: invite.restaurant },
+                            { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
+                            { new: true, session }
+                        );
+                        p.status = "Paid";
+                        p.amountToPay = userTotalAmount;
+                    }
+
+                    else if (p.extraChargeAmountToPay > 0) {
+                        const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                        const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
+                        if (userWallet && userWallet.totalBalance < hasToPay) {
+                            throw new Error("Insufficient balance");
+                        }
+                        if (commonDetails.contribution === "Organizer pay for all") {
+                            const organizerParticipant = invite.participants.find(
+                                (p: any) => p.user.toString() === invite.organizer.toString()
+                            );
+                            if (!organizerParticipant) {
+                                throw new Error("Organizer not found");
+                            }
+                            await UserInvitationProcessModel.findOneAndUpdate(
+                                {
+                                    "participantsInProcess.user": organizerParticipant.user, // corrected: use organizerParticipant.user, not entire object
+                                },
+                                {
+                                    $set: { "participantsInProcess.$.amountToPay": userTotalAmount },
+                                },
+                                { new: true, session }
+                            );
+                            await Wallet.findOneAndUpdate(
+                                { user: user._id },
+                                { $inc: { totalBalance: -p.extraChargeAmountToPay } },
+                                { new: true, session }
+                            );
+                        }
+                        else if (commonDetails.contribution === "Each pay their own") {
+                            await Wallet.findOneAndUpdate(
+                                { user: user._id },
+                                { $inc: { totalBalance: -(userTotalAmount + p.extraChargeAmountToPay) } },
+                                { new: true, session }
+                            );
+                            await Wallet.findOneAndUpdate(
+                                { user: invite.restaurant },
+                                { $inc: { totalBalance: userTotalAmount } },
+                                { new: true, session }
+                            );
+                            p.status = "Paid";
+                            p.amountToPay = userTotalAmount;
+
+                        } else if (commonDetails.contribution === "Participants pay organizer") {
+                            const organizerParticipant = invite.participants.find(
+                                (p: any) => p.user.toString() === invite.organizer.toString()
+                            );
+                            if (!organizerParticipant) {
+                                throw new Error("Organizer not found");
+                            }
+                            let organizerTotalAmount = 0;
+                            await Promise.all(
+                                organizerParticipant.selectedMenuItems.map(async (menuItemId: any) => {
+                                    const menuItem = await Menu.findById(menuItemId.toString()).session(session);
+                                    if (!menuItem) {
+                                        throw new Error(`Menu item with ID ${menuItemId} not found`);
+                                    }
+                                    const price = menuItem.price;
+                                    organizerTotalAmount += price;
+                                    return menuItem._id;
+                                })
+                            );
+                            const eachParticipantAmount = commonDetails.extraChargeAmount / invite.participants.length - 1;
+                            await Wallet.findOneAndUpdate(
+                                { user: user._id },
+                                { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount + p.extraChargeAmountToPay) } },
+                                { new: true, session }
+                            );
+                            await Wallet.findOneAndUpdate(
+                                { user: invite.restaurant },
+                                { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
+                                { new: true, session }
+                            );
+                            p.status = "Paid";
+                            p.amountToPay = userTotalAmount;
+                        }
 
                     }
-                    await Wallet.findOneAndUpdate(
-                        { user: user._id },
-                        { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
-                        { new: true, session }
-                    );
-                    await Wallet.findOneAndUpdate(
-                        { user: invite.restaurant },
-                        { $inc: { totalBalance: userTotalAmount } },
-                        { new: true, session }
-                    );
-                    p.status = "Paid";
-                    p.amountToPay = userTotalAmount;
-
-                } else if (p.extraChargeAmountToPay > 0) {
-                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-                    const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
-                    if (userWallet && userWallet.totalBalance < hasToPay) {
-                        throw new Error("Insufficient balance");
-                    }
-                    await Wallet.findOneAndUpdate(
-                        { user: user._id },
-                        { $inc: { totalBalance: -hasToPay } },
-                        { new: true, session }
-                    );
-                    await Wallet.findOneAndUpdate(
-                        { user: invite.restaurant },
-                        { $inc: { totalBalance: userTotalAmount } },
-                        { new: true, session }
-                    );
-                    p.status = "Paid";
-                    p.amountToPay = hasToPay;
                 }
             }
         }
@@ -445,8 +561,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
 
         throw error;
     }
-}
-
+};
 
 /*
 {
@@ -486,6 +601,6 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
 */
 
 /* 
-1. 
+1.
 
 */
