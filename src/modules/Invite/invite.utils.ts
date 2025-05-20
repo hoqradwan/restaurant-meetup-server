@@ -1,3 +1,5 @@
+import { UserModel } from "../user/user.model";
+
 export const formatTime = (time: string) => {
     const [hours, minutes] = time.split(':').map(Number);
     if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
@@ -15,4 +17,23 @@ export function generateTicketNumber(): string {
   
     return ticketNumber.toString();
   }
+
+export  const processingParticipantData = async (participants: any, eachParticipantAmount: any, session: any) => {
+    await Promise.all(
+                    participants.map(async (p: { user: string }) => {
+                        const participant = await UserModel.findById(p.user).session(session);
+                        if (!participant) {
+                            throw new Error(`Participant user with ID ${p.user} not found`);
+                        }
+                        // participantsInPrecessTmp.push({ user: participant._id, amountToPay: 0, extraChargeAmountToGet: eachParticipantAmount, extraChargeAmountToPay: 0, status: "pending" });
+                        return {
+                            user: participant._id,
+                            amountToPay: 0,
+                            extraChargeAmountToGet: 0,
+                            extraChargeAmountToPay: eachParticipantAmount,
+                            status: "Pending"
+                        };
+                    })
+                );
+}
     

@@ -10,13 +10,17 @@ const walletSchema = new Schema({
         type: Number,
         default: 0,
     },
-    totalWithdrawal: [
-        {
-            type: Number,
-            default: 0,
-        },
-    ],
+    totalWithdrawal:
+    {
+        type: Number,
+        default: 0,
+    }
+    ,
+    type: {
+        type: String,
+        enum: ["restaurant", "user"],
+    }
 }, { timestamps: true });
 
-const Wallet =  model("Wallet", walletSchema);
+const Wallet = model("Wallet", walletSchema);
 export default Wallet;

@@ -33,6 +33,7 @@ import {
 } from "../../config";
 import httpStatus from "http-status";
 import { CustomRequest } from "../../utils/customRequest";
+import Wallet from "../Wallet/wallet.model";
 
 export const registerUser = catchAsync(async (req: Request, res: Response) => {
   const { firstName, lastName, email, password, confirmPassword, role } = req.body;
@@ -91,8 +92,7 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
   const token = jwt.sign({ email }, JWT_SECRET_KEY as string, {
     expiresIn: "7d",
   });
-
-  console.log("====>>>> execute this line")
+ 
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -340,8 +340,13 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     establishmentName,
     hashedPassword,
   });
-
-
+  const created =  await Wallet.create({
+    user: result._id,
+    totalBalance: 0,
+    totalWithdrawal: 0,
+    type: role,
+  });
+    
 
   // await emitNotification({
   //   userId: createdUser._id as string,

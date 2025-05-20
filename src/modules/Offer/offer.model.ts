@@ -1,6 +1,7 @@
 import { Schema, model, Types } from 'mongoose';
 
 const OfferSchema = new Schema({
+    organizer: { type: Types.ObjectId, required: true, ref: 'User' },
     CommonDetailsOfferOrInvite: { type: Types.ObjectId, ref: 'CommonDetailsOfferOrInvite', required: true },
     audienceDetails: {
         age: { type: Number, required: true },
@@ -14,6 +15,10 @@ const OfferSchema = new Schema({
         religion: { type: String, required: true },
         interest: { type: String, required: true },
     },
+    participants: [{
+        user: { type: Types.ObjectId, ref: 'User', required: true },
+        selectedMenuItems: [{ type: Types.ObjectId, ref: 'Menu', required: true, default: [] }],
+    }],
     restaurant: { type: Types.ObjectId, ref: 'Restaurant', required: true },
     menuItem: [{ type: Types.ObjectId, ref: 'Menu', required: true }],
 

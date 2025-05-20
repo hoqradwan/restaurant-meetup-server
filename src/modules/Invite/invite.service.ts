@@ -120,6 +120,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
+                await Wallet.findOneAndUpdate(
+                    { user: user._id },
+                    { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
+                    { new: true, session }
+                );
+                await Wallet.findOneAndUpdate(
+                    { user: restaurant },
+                    { $inc: { totalBalance: organizerTotalAmount } },
+                    { new: true, session }
+                );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -140,6 +150,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
+                await Wallet.findOneAndUpdate(
+                    { user: user._id },
+                    { $inc: { totalBalance: -organizerTotalAmount } },
+                    { new: true, session }
+                );
+                await Wallet.findOneAndUpdate(
+                    { user: restaurant },
+                    { $inc: { totalBalance: organizerTotalAmount } },
+                    { new: true, session }
+                );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -159,19 +179,22 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
-            // const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-            // if (!userWallet || userWallet.totalBalance < organizerTotalAmount) {
-            //     throw new Error("Insufficient wallet balance for the user");
-            // }
-            // const cutWalletBalance = await Wallet.findOneAndUpdate({ user: user._id }, { $inc: { balance: -organizerTotalAmount } }, { new: true, session });
-            // if (!cutWalletBalance) {
-            //     throw new Error("Failed to update wallet balance for the user");
-            // }
 
         } else if (contribution === "Organizer pay for all") {
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
+
+                await Wallet.findOneAndUpdate(
+                    { user: user._id },
+                    { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
+                    { new: true, session }
+                );
+                await Wallet.findOneAndUpdate(
+                    { user: restaurant },
+                    { $inc: { totalBalance: organizerTotalAmount } },
+                    { new: true, session }
+                );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -193,6 +216,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
+                await Wallet.findOneAndUpdate(
+                    { user: user._id },
+                    { $inc: { totalBalance: -organizerTotalAmount + extraChargeAmount } },
+                    { new: true, session }
+                );
+                await Wallet.findOneAndUpdate(
+                    { user: restaurant },
+                    { $inc: { totalBalance: organizerTotalAmount } },
+                    { new: true, session }
+                );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -222,6 +255,11 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         } else if (contribution === "Participants pay organizer") {
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
+                await Wallet.findOneAndUpdate(
+                    { user: user._id },
+                    { $inc: { totalBalance: -extraChargeAmount } },
+                    { new: true, session }
+                );
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: 0, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
@@ -293,13 +331,13 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         if (!user) {
             throw new Error("User not found");
         }
-        
+
         // Find the invite and populate commonDetailsOfferOrInvite
         const invite = await Invite.findById(inviteId).session(session).populate("commonDetailsOfferOrInvite");
         if (!invite) {
             throw new Error("Invite not found");
         }
-        if(invite.organizer.toString() === user._id.toString()){
+        if (invite.organizer.toString() === user._id.toString()) {
             throw new Error("Organizer cannot accept own invite");
         }
         const commonDetails = invite.commonDetailsOfferOrInvite as any;
@@ -310,7 +348,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         ) {
             throw new Error("Invitation has expired");
         }
-       
+
         const participant = invite.participants.find((p: any) => p.user.toString() === user._id.toString());
         if (!participant) {
             throw new Error("User is not a participant in this invite");
@@ -336,52 +374,64 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
             participant.selectedMenuItems = userMenuItemsExist;
             await invite.save({ session });
         }
-      
-      
+
+
         const userInvitaionProcess = await UserInvitationProcessModel.findOne({ commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite }).session(session);
-           if (!userInvitaionProcess) {
+        if (!userInvitaionProcess) {
             throw new Error("User invitation process not found");
         }
-        const alreadyaccepted= userInvitaionProcess?.participantsInProcess.find((p: any) => p.user.toString() === user._id.toString() && p.status === "Paid");
+        const alreadyaccepted = userInvitaionProcess?.participantsInProcess.find((p: any) => p.user.toString() === user._id.toString() && p.status === "Paid");
         if (alreadyaccepted) {
             throw new Error("You have already accepted this invite");
         }
-      
+
         for (const p of userInvitaionProcess.participantsInProcess) {
             if (p.user.toString() === user._id.toString()) {
-            if (p.extraChargeAmountToGet > 0) {
-                const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-                if (userWallet && userWallet.totalBalance < userTotalAmount) {
-                throw new Error("Insufficient balance");
-                }
-                await Wallet.findOneAndUpdate(
-                { user: user._id },
-                { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
-                { new: true, session }
-                );
-                p.status = "Paid";
-                p.amountToPay = userTotalAmount;
+                if (p.extraChargeAmountToGet > 0) {
+                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                    if (userWallet && userWallet.totalBalance < userTotalAmount) {
+                        throw new Error("Insufficient balance");
+                    }
+                    if (commonDetails.contribution === "Organizer pay for all") {
 
-            } else if (p.extraChargeAmountToPay > 0) {
-                const userWallet = await Wallet.findOne({ user: user._id }).session(session);
-                const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
-                if (userWallet && userWallet.totalBalance < hasToPay) {
-                throw new Error("Insufficient balance");
+                    }
+                    await Wallet.findOneAndUpdate(
+                        { user: user._id },
+                        { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
+                        { new: true, session }
+                    );
+                    await Wallet.findOneAndUpdate(
+                        { user: invite.restaurant },
+                        { $inc: { totalBalance: userTotalAmount } },
+                        { new: true, session }
+                    );
+                    p.status = "Paid";
+                    p.amountToPay = userTotalAmount;
+
+                } else if (p.extraChargeAmountToPay > 0) {
+                    const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+                    const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
+                    if (userWallet && userWallet.totalBalance < hasToPay) {
+                        throw new Error("Insufficient balance");
+                    }
+                    await Wallet.findOneAndUpdate(
+                        { user: user._id },
+                        { $inc: { totalBalance: -hasToPay } },
+                        { new: true, session }
+                    );
+                    await Wallet.findOneAndUpdate(
+                        { user: invite.restaurant },
+                        { $inc: { totalBalance: userTotalAmount } },
+                        { new: true, session }
+                    );
+                    p.status = "Paid";
+                    p.amountToPay = hasToPay;
                 }
-                await Wallet.findOneAndUpdate(
-                { user: user._id },
-                { $inc: { totalBalance: -hasToPay } },
-                { new: true, session }
-                );
-                p.status = "Paid";
-                p.amountToPay = hasToPay;
-            }
             }
         }
 
         // Save the updated participantsInProcess array back to the UserInvitationProcessModel
         await userInvitaionProcess.save({ session });
-
 
         // Commit the transaction if everything goes well
         await session.commitTransaction();
@@ -393,7 +443,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         await session.abortTransaction();
         session.endSession();
 
-        throw error;  
+        throw error;
     }
 }
 
@@ -432,5 +482,10 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
 /* 
 - while creating an invite one can be engaged in another invite or offer.
 - organizer cannot send invite to same user and same restaurant second time.
+
+*/
+
+/* 
+1. 
 
 */
