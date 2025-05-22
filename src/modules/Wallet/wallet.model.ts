@@ -19,6 +19,7 @@ const walletSchema = new Schema({
     type: {
         type: String,
         enum: ["restaurant", "user"],
+        default: "user",
     }
 }, { timestamps: true });
 

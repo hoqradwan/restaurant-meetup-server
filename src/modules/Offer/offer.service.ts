@@ -1,7 +1,7 @@
-import { CommonDetailsOfferOrInvite } from "../CommonDetailsOfferOrInvite/CommonDetailsOfferOrInvite.model";
 import { formatTime } from "../Invite/invite.utils";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
+import Wallet from "../Wallet/wallet.model";
 import { Offer } from "./offer.model";
 
 import mongoose, { ClientSession, Types } from 'mongoose';
@@ -44,8 +44,6 @@ export const createOfferIntoDB = async (
 ) => {
     const session: ClientSession = await mongoose.startSession();
     session.startTransaction();
-    // console.log("Creating offer with data: ", offerData);
-    console.log("User ID: ", userId);
     try {
         const {
             appointmentDate,
@@ -80,6 +78,25 @@ export const createOfferIntoDB = async (
         const user = await UserModel.findById(userId).session(session);
         if (!user) {
             throw new Error('User not found');
+        }
+
+        // const now = new Date();
+        const overlappingOffer = await Offer.findOne({
+            appointmentDate: { $lte: appointmentDate },
+            expirationDate: { $gte: expirationDate }
+        }).session(session);
+
+        if (overlappingOffer) {
+            throw new Error('There is already an offer overlapping this time period.');
+        }
+
+        const activeOfferForRestaurant = await Offer.findOne({
+            restaurant,
+            expirationDate: { $gte: new Date() },
+        }).session(session);
+
+        if (activeOfferForRestaurant) {
+            throw new Error('You have already created an active offer for this restaurant.');
         }
 
         // Validate duration
@@ -127,32 +144,40 @@ export const createOfferIntoDB = async (
             })
         );
 
+        let orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
+        if (!orgamizerWallet) {
+
+            throw new Error('Organizer wallet not found');
+
+        }
+
+
+        if (orgamizerWallet.totalBalance < organizerTotalAmount) {
+            throw new Error('Insufficient Balance');
+        }
+        const restaurantWallet = await Wallet.findOne({ user: restaurant }).session(session);
+        if (!restaurantWallet) {
+            throw new Error('Restaurant wallet not found');
+        }
+        console.log(restaurantWallet);
+
+        if (contribution === "Each pay their own" || contribution === "Organizer pay for all") {
+            await Wallet.findByIdAndUpdate(
+                orgamizerWallet._id,
+                { $inc: { totalBalance: -organizerTotalAmount } },
+                { new: true, session }
+            );
+            await Wallet.findByIdAndUpdate(
+                restaurantWallet._id,
+                { $inc: { totalBalance: organizerTotalAmount } },
+                { new: true, session }
+            );
+        }
+
+
+
         const participantData = [{ user: user._id, selectedMenuItems: organizerMenuItemsExist }];
 
-        const commonDetails = {
-            image,
-            appointmentDate,
-            agenda,
-            description,
-            appointmentTime: formattedTime,
-            duration,
-            expirationDate,
-            expirationTime: formattedExpirationTime,
-            fbUrl: user.facebookUrl || "abc",
-            instaUrl: user.instagramUrl || "abc",
-            linkedinUrl: user.linkedinUrl || "abc",
-            contribution,
-            extraChargeType,
-            extraChargeAmount,
-            status: 'Pending',
-            type: 'Offer',
-        };
-
-        // Create common details document
-        const commonDetailsOfferOrInvite = await CommonDetailsOfferOrInvite.create([commonDetails], { session });
-        if (!commonDetailsOfferOrInvite.length) {
-            throw new Error('Failed to create common details for invite');
-        }
 
         const audienceDetailsData: AudienceDetails = {
             age,
@@ -171,7 +196,21 @@ export const createOfferIntoDB = async (
             [
                 {
                     organizer: user._id,
-                    CommonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id,
+                    image,
+                    appointmentDate,
+                    agenda,
+                    description,
+                    appointmentTime: formattedTime,
+                    duration,
+                    expirationDate,
+                    expirationTime: formattedExpirationTime,
+                    fbUrl: user.facebookUrl || "abc",
+                    instaUrl: user.instagramUrl || "abc",
+                    linkedinUrl: user.linkedinUrl || "abc",
+                    contribution,
+                    extraChargeType,
+                    extraChargeAmount,
+                    status: 'Pending',
                     audienceDetails: audienceDetailsData,
                     participants: participantData,
                     restaurant,

@@ -8,7 +8,6 @@ import { initSocketIO } from "./utils/socket";
 import http from "http";
 const server = http.createServer(app);
 initSocketIO(server);
-
 async function main() {
   try {
     // Connect to MongoDB

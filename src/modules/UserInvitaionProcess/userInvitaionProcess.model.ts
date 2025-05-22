@@ -1,6 +1,6 @@
 import { model, Schema } from 'mongoose';
 export const UserInvitationProcessSchema = new Schema({
-    commonDetailsOfferOrInvite: { type: Schema.Types.ObjectId, required: true, ref: 'CommonDetailsOfferOrInvite' },
+    invite: { type: Schema.Types.ObjectId, required: true, ref: 'Invite' },
     participantsInProcess: [
         {
             user: { type: Schema.Types.ObjectId, required: true, ref: 'User' },

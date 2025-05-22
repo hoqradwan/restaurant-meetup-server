@@ -1,4 +1,3 @@
-import { CommonDetailsOfferOrInvite } from "../CommonDetailsOfferOrInvite/CommonDetailsOfferOrInvite.model";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
@@ -41,7 +40,24 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         if (!isRestaurantExists) {
             throw new Error("Restaurant not found");
         }
-
+            // const now = new Date();
+                const overlappingOffer = await Invite.findOne({
+                    appointmentDate: { $lte: appointmentDate },
+                    expirationDate: { $gte: expirationDate }
+                }).session(session);
+        
+                if (overlappingOffer) {
+                    throw new Error('There is already an invitation overlapping this time period.');
+                }
+        
+                const activeOfferForRestaurant = await Invite.findOne({
+                    restaurant,
+                    expirationDate: { $gte: new Date() },
+                }).session(session);
+        
+                if (activeOfferForRestaurant) {
+                    throw new Error('You have already created an active invitation for this restaurant.');
+                }
         // Validate appointment and expiration dates
         if (appointmentDate < new Date()) {
             throw new Error("Appointment date cannot be in the past");
@@ -87,10 +103,9 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         // Generate a ticket number
         const ticketNumber = generateTicketNumber();
 
-
-        // Create common details for the invite
-        const commonDetails = {
-            image,
+                // Add common details to invite data
+        const inviteDataWithDetails = {
+            organizer: user._id, participants: participantData, restaurant, image,
             appointmentDate,
             agenda,
             description,
@@ -106,14 +121,11 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             extraChargeAmount,
             ticketNumber,
             status: "Pending",
-            type: "Invite",
         };
 
-        // Create common details document within the transaction
-        const commonDetailsOfferOrInvite = await CommonDetailsOfferOrInvite.create([commonDetails], { session });
-        if (!commonDetailsOfferOrInvite) {
-            throw new Error("Failed to create common details for invite");
-        }
+        // Create the invite document within the transaction
+        const invite = await Invite.create([inviteDataWithDetails], { session });
+        
         let participantsInPrecessTmp: { user: any; amountToPay: number; extraChargeAmountToGet: number; extraChargeAmountToPay: number; status: string; }[] = [];
         let UserInvitationProcess;
         if (contribution === "Each pay their own") {
@@ -146,7 +158,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -176,7 +188,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
 
@@ -212,7 +224,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                     })
                 );
 
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id,  participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -242,7 +254,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
             // const userWallet = await Wallet.findOne({ user: user._id }).session(session);
             // if (!userWallet || userWallet.totalBalance < organizerTotalAmount) {
@@ -277,7 +289,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id,  participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -296,22 +308,18 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
         }
 
-        // Add common details to invite data
-        const inviteDataWithCommonDetails = { organizer: user._id, participants: participantData, restaurant, commonDetailsOfferOrInvite: commonDetailsOfferOrInvite[0]._id };
 
-        // Create the invite document within the transaction
-        const invite = await Invite.create([inviteDataWithCommonDetails], { session });
 
         // Commit the transaction if everything goes well
         await session.commitTransaction();
         session.endSession();
 
-        return { UserInvitationProcess, commonDetailsOfferOrInvite, invite };
+        return { UserInvitationProcess, invite };
     } catch (error) {
         // Rollback the transaction if an error occurs
         await session.abortTransaction();
@@ -342,8 +350,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         if (invite.organizer.toString() === user._id.toString()) {
             throw new Error("Organizer cannot accept own invite");
         }
-        const commonDetails = invite.commonDetailsOfferOrInvite as any;
-        if (commonDetails && commonDetails.expirationDate && new Date(commonDetails.expirationDate) < new Date()) {
+        if (invite.expirationDate && new Date(invite.expirationDate) < new Date()) {
             throw new Error("Invitation has expired");
         }
 
@@ -376,7 +383,8 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         }
 
         const userInvitaionProcess = await UserInvitationProcessModel.findOne({
-            commonDetailsOfferOrInvite: invite.commonDetailsOfferOrInvite,
+            invite: invite._id,
+
         }).session(session);
         if (!userInvitaionProcess) {
             throw new Error("User invitation process not found");
@@ -396,7 +404,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                     if (userWallet && userWallet.totalBalance < userTotalAmount) {
                         throw new Error("Insufficient balance");
                     }
-                    if (commonDetails.contribution === "Organizer pay for all") {
+                    if (invite.contribution === "Organizer pay for all") {
                         const organizerParticipant = invite.participants.find(
                             (p: any) => p.user.toString() === invite.organizer.toString()
                         );
@@ -417,7 +425,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                             { $inc: { totalBalance: p.extraChargeAmountToGet } },
                             { new: true, session }
                         );
-                    } else if (commonDetails.contribution === "Each pay their own") {
+                    } else if (invite.contribution === "Each pay their own") {
                         await Wallet.findOneAndUpdate(
                             { user: user._id },
                             { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
@@ -431,7 +439,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                         p.status = "Paid";
                         p.amountToPay = userTotalAmount;
 
-                    } else if (commonDetails.contribution === "Participants pay organizer") {
+                    } else if (invite.contribution === "Participants pay organizer") {
                         const organizerParticipant = invite.participants.find(
                             (p: any) => p.user.toString() === invite.organizer.toString()
                         );
@@ -450,7 +458,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                                 return menuItem._id;
                             })
                         );
-                        const eachParticipantAmount = commonDetails.extraChargeAmount / invite.participants.length - 1;
+                        const eachParticipantAmount = invite.extraChargeAmount / invite.participants.length - 1;
                         await Wallet.findOneAndUpdate(
                             { user: user._id },
                             { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount) + p.extraChargeAmountToGet } },
@@ -471,7 +479,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                         if (userWallet && userWallet.totalBalance < hasToPay) {
                             throw new Error("Insufficient balance");
                         }
-                        if (commonDetails.contribution === "Organizer pay for all") {
+                        if (invite.contribution === "Organizer pay for all") {
                             const organizerParticipant = invite.participants.find(
                                 (p: any) => p.user.toString() === invite.organizer.toString()
                             );
@@ -493,7 +501,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                                 { new: true, session }
                             );
                         }
-                        else if (commonDetails.contribution === "Each pay their own") {
+                        else if (invite.contribution === "Each pay their own") {
                             await Wallet.findOneAndUpdate(
                                 { user: user._id },
                                 { $inc: { totalBalance: -(userTotalAmount + p.extraChargeAmountToPay) } },
@@ -507,7 +515,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                             p.status = "Paid";
                             p.amountToPay = userTotalAmount;
 
-                        } else if (commonDetails.contribution === "Participants pay organizer") {
+                        } else if (invite.contribution === "Participants pay organizer") {
                             const organizerParticipant = invite.participants.find(
                                 (p: any) => p.user.toString() === invite.organizer.toString()
                             );
@@ -526,7 +534,7 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                                     return menuItem._id;
                                 })
                             );
-                            const eachParticipantAmount = commonDetails.extraChargeAmount / invite.participants.length - 1;
+                            const eachParticipantAmount = invite.extraChargeAmount / invite.participants.length - 1;
                             await Wallet.findOneAndUpdate(
                                 { user: user._id },
                                 { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount + p.extraChargeAmountToPay) } },
