@@ -230,7 +230,39 @@ export const createOfferIntoDB = async (
     }
 };
 
+export const acceptOfferIntoDB = async(userId: string, offerData : any)=>{
+    const session: ClientSession = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const user = await UserModel.findById(userId).session(session);
+        if (!user) {    
+            throw new Error('User not found');
+        }
+        const offer = await Offer.findById(userId).session(session);
+        if (!offer) {
+            throw new Error('Offer not found');
+        }
 
+        // Check if the user is already a participant
+        const isParticipant = offer.participants.some((participant) => participant.user.toString() === userId);
+        if (isParticipant) {
+            throw new Error('Your is already a participant in this offer');
+        }
+
+        // Add the user to the participants list
+        offer.participants.push({ user: userId, selectedMenuItems: [] });
+        await offer.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return offer;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
+}
 /* 
 
 {

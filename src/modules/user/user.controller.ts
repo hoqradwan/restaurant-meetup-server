@@ -340,7 +340,7 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     establishmentName,
     hashedPassword,
   });
-  const created =  await Wallet.create({
+    await Wallet.create({
     user: result._id,
     totalBalance: 0,
     totalWithdrawal: 0,

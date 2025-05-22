@@ -1,3 +1,4 @@
+import { extra } from "http-status";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
@@ -40,24 +41,24 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         if (!isRestaurantExists) {
             throw new Error("Restaurant not found");
         }
-            // const now = new Date();
-                const overlappingOffer = await Invite.findOne({
-                    appointmentDate: { $lte: appointmentDate },
-                    expirationDate: { $gte: expirationDate }
-                }).session(session);
-        
-                if (overlappingOffer) {
-                    throw new Error('There is already an invitation overlapping this time period.');
-                }
-        
-                const activeOfferForRestaurant = await Invite.findOne({
-                    restaurant,
-                    expirationDate: { $gte: new Date() },
-                }).session(session);
-        
-                if (activeOfferForRestaurant) {
-                    throw new Error('You have already created an active invitation for this restaurant.');
-                }
+        // const now = new Date();
+        const overlappingOffer = await Invite.findOne({
+            appointmentDate: { $lte: appointmentDate },
+            expirationDate: { $gte: expirationDate }
+        }).session(session);
+
+        if (overlappingOffer) {
+            throw new Error('There is already an invitation overlapping this time period.');
+        }
+
+        const activeOfferForRestaurant = await Invite.findOne({
+            restaurant,
+            expirationDate: { $gte: new Date() },
+        }).session(session);
+
+        if (activeOfferForRestaurant) {
+            throw new Error('You have already created an active invitation for this restaurant.');
+        }
         // Validate appointment and expiration dates
         if (appointmentDate < new Date()) {
             throw new Error("Appointment date cannot be in the past");
@@ -102,8 +103,25 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         participantData.push({ user: user._id, selectedMenuItems: organizerMenuItemsExist });
         // Generate a ticket number
         const ticketNumber = generateTicketNumber();
-
-                // Add common details to invite data
+        if (contribution === "Each pay their own" || contribution === "Organizer pay for all") {
+            const orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
+            if (!orgamizerWallet) {
+                throw new Error("Organizer wallet not found");
+            }
+            if (orgamizerWallet.totalBalance < organizerTotalAmount) {
+                throw new Error("Insufficient Balance");
+            }
+        }
+        if (extraChargeType === "Organizer pays participants") {
+            const orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
+            if (!orgamizerWallet) {
+                throw new Error("Organizer wallet not found");
+            }
+            if (orgamizerWallet.totalBalance < extraChargeAmount) {
+                throw new Error("Insufficient Balance");
+            }
+        }
+        // Add common details to invite data
         const inviteDataWithDetails = {
             organizer: user._id, participants: participantData, restaurant, image,
             appointmentDate,
@@ -125,7 +143,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
 
         // Create the invite document within the transaction
         const invite = await Invite.create([inviteDataWithDetails], { session });
-        
+
         let participantsInPrecessTmp: { user: any; amountToPay: number; extraChargeAmountToGet: number; extraChargeAmountToPay: number; status: string; }[] = [];
         let UserInvitationProcess;
         if (contribution === "Each pay their own") {
@@ -158,7 +176,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -188,7 +206,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
 
@@ -224,7 +242,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                     })
                 );
 
-                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id,  participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -254,7 +272,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
             // const userWallet = await Wallet.findOne({ user: user._id }).session(session);
             // if (!userWallet || userWallet.totalBalance < organizerTotalAmount) {
@@ -289,7 +307,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{invite:invite[0]._id,  participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
@@ -308,7 +326,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite:invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
+                UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
 
         }
