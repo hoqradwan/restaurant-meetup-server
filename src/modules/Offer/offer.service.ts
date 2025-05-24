@@ -160,23 +160,6 @@ export const createOfferIntoDB = async (
         if (!restaurantWallet) {
             throw new Error('Restaurant wallet not found');
         }
-        console.log(restaurantWallet);
-
-        if (contribution === "Each pay their own" || contribution === "Organizer pay for all") {
-            await Wallet.findByIdAndUpdate(
-                orgamizerWallet._id,
-                { $inc: { totalBalance: -organizerTotalAmount } },
-                { new: true, session }
-            );
-            await Wallet.findByIdAndUpdate(
-                restaurantWallet._id,
-                { $inc: { totalBalance: organizerTotalAmount } },
-                { new: true, session }
-            );
-        }
-
-
-
         const participantData = [{ user: user._id, selectedMenuItems: organizerMenuItemsExist }];
 
 
@@ -219,6 +202,69 @@ export const createOfferIntoDB = async (
             ],
             { session }
         );
+        let participantsToInclude = [];
+
+        if (contribution === "Each pay their own" || contribution === "Organizer pay for all") {
+            await Wallet.findByIdAndUpdate(
+                orgamizerWallet._id,
+                { $inc: { totalBalance: -organizerTotalAmount } },
+                { new: true, session }
+            );
+            await Wallet.findByIdAndUpdate(
+                restaurantWallet._id,
+                { $inc: { totalBalance: organizerTotalAmount } },
+                { new: true, session }
+            );
+            if (extraChargeType === "Participants pay organizer") {
+                participantsToInclude.push({
+                    user: user._id,
+                    amountToPay: 0,
+                    organizerMenuItemsToPay: 0,
+                    participantMenutItemsToPay: 0,
+                    extraChargeAmountToGet: extraChargeAmount,
+                    extraChargeAmountToPay: 0,
+                    status: "Accepted"
+                });
+                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+            }else if (extraChargeType === "Organizer pays participants") {
+                participantsToInclude.push({
+                    user: user._id,
+                    amountToPay: 0,
+                    organizerMenuItemsToPay: 0,
+                    participantMenutItemsToPay: 0,
+                    extraChargeAmountToGet: 0,
+                    extraChargeAmountToPay: extraChargeAmount,
+                    status: "Accepted"
+                });
+                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+            }
+        }
+
+        if (contribution === "Participants pay organizer") {
+               if (extraChargeType === "Participants pay organizer") {
+                participantsToInclude.push({
+                    user: user._id,
+                    amountToPay: 0,
+                    organizerMenuItemsToPay: organizerTotalAmount,
+                    participantMenutItemsToPay: 0,
+                    extraChargeAmountToGet: extraChargeAmount,
+                    extraChargeAmountToPay: 0,
+                    status: "Accepted"
+                });
+                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+            }else if (extraChargeType === "Organizer pays participants") {
+                participantsToInclude.push({
+                    user: user._id,
+                    amountToPay: 0,
+                    organizerMenuItemsToPay: organizerTotalAmount,
+                    participantMenutItemsToPay: 0,
+                    extraChargeAmountToGet: 0,
+                    extraChargeAmountToPay: extraChargeAmount,
+                    status: "Accepted"
+                });
+                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+            }
+        }
 
         await session.commitTransaction();
         session.endSession();
@@ -278,7 +324,6 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
 
         if (userMenuItemsExist) {
             offer.participants.push({ user: userId, selectedMenuItems: userMenuItemsExist });
-
             // await invite.save({ session });
         }
 
@@ -295,6 +340,42 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
         );
         if (alreadyaccepted) {
             throw new Error("You have already accepted this offer");
+        }
+        if (offer.contribution === "Each pay their own") {
+            const userWallet = await Wallet.findOne({ user: user._id }).session(session);
+            if (!userWallet) {
+                throw new Error("User wallet not found");
+            }
+            if (userWallet.totalBalance < userTotalAmount) {
+                throw new Error("Insufficient balance");
+            }
+            const cutMenuPrice = await Wallet.findByIdAndUpdate(
+                userWallet._id,
+                { $inc: { totalBalance: -userTotalAmount } },
+                { new: true, session }
+            );
+            if (!cutMenuPrice) {
+                throw new Error("Failed to deduct menu price from user wallet");
+            }
+            const addToRestaurantWallet = await Wallet.findByIdAndUpdate(
+                restaurantIdToVerify,
+                { $inc: { totalBalance: userTotalAmount } },
+                { new: true, session }
+            );
+            if (!addToRestaurantWallet) {
+                throw new Error("Failed to add menu price to restaurant wallet");
+            }
+
+        } else if (offer.contribution === "Organizer pay for all") {
+            const addToAmountToPayForOrganizer = await UserOfferProcessModel.findOneAndUpdate(
+                {
+                    "participantsInProcess.user": offer.organizer,
+                },
+                {
+                    $inc: { "participantsInProcess.$.amountToPay": userTotalAmount },
+                },
+                { new: true, session }
+            );
         }
         for (const p of userOfferProcess.participantsInProcess) {
             if (p.user.toString() === user._id.toString()) {
@@ -371,7 +452,6 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                         p.status = "Paid";
                         p.amountToPay = userTotalAmount;
                     }
-
                     else if (p.extraChargeAmountToPay > 0) {
                         const userWallet = await Wallet.findOne({ user: user._id }).session(session);
                         const hasToPay = userTotalAmount + p.extraChargeAmountToPay;
@@ -466,7 +546,8 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
     }
 }
 /* 
-
+abc def ijk lmn opq rst uvw xyz
+offer id 
 {
   "appointmentDate": "2025-06-01T10:00:00.000Z",
   "description": "Exclusive networking event for tech professionals.",
