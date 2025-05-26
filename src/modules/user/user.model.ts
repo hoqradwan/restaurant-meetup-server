@@ -60,6 +60,7 @@ function extendSchema(baseSchema: Schema, extension: any, options?: SchemaOption
 const UserSchema = extendSchema(BaseUserSchema, {
   image: { type: String, default: "" },
   age: { type: String, default: "" },
+  race : { type: String, default: "" },
   gender: { type: String, default: "" },
   about: { type: String, default: "" },
   bio: { type: String, default: "" },
@@ -99,6 +100,8 @@ const UserSchema = extendSchema(BaseUserSchema, {
     enum: ["English", "Bangla", "Spanish", "French", "German", "Other"],
     default: ["English"],
   },
+  interests: { type: [String], default: [] },
+  
 }, {
   timestamps: true
 });

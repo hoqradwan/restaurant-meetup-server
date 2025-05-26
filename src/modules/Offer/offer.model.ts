@@ -40,7 +40,7 @@ const OfferSchema = new Schema({
         gender: { type: String, required: true },
         weight: { type: Number, required: true }, // weight in kg
         religion: { type: String, required: true },
-        interest: { type: String, required: true },
+        interests: [{ type: String, required: true }],
     },
     participants: [{
         user: { type: Types.ObjectId, ref: 'User', required: true },

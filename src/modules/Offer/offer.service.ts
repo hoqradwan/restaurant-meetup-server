@@ -378,7 +378,7 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                     status: "Processing"
                 });
                 await userOfferProcess.save({ session });
-            }else if (offer.extraChargeType === "Organizer pays participants") {
+            } else if (offer.extraChargeType === "Organizer pays participants") {
                 userOfferProcess.participantsInProcess.push({
                     user: user._id,
                     amountToPay: 0,
@@ -402,7 +402,7 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                 },
                 { new: true, session }
             );
-               if (offer.extraChargeType === "Participants pay organizer") {
+            if (offer.extraChargeType === "Participants pay organizer") {
                 userOfferProcess.participantsInProcess.push({
                     user: user._id,
                     amountToPay: 0,
@@ -413,7 +413,7 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                     status: "Processing"
                 });
                 await userOfferProcess.save({ session });
-            }else if (offer.extraChargeType === "Organizer pays participants") {
+            } else if (offer.extraChargeType === "Organizer pays participants") {
                 userOfferProcess.participantsInProcess.push({
                     user: user._id,
                     amountToPay: 0,
@@ -425,8 +425,8 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                 });
                 await userOfferProcess.save({ session });
             }
-        }else if (offer.contribution === "Participants pay organizer") {
-           if (offer.extraChargeType === "Participants pay organizer") {
+        } else if (offer.contribution === "Participants pay organizer") {
+            if (offer.extraChargeType === "Participants pay organizer") {
                 userOfferProcess.participantsInProcess.push({
                     user: user._id,
                     amountToPay: 0,
@@ -437,7 +437,7 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                     status: "Processing"
                 });
                 await userOfferProcess.save({ session });
-            }else if (offer.extraChargeType === "Organizer pays participants") {
+            } else if (offer.extraChargeType === "Organizer pays participants") {
                 userOfferProcess.participantsInProcess.push({
                     user: user._id,
                     amountToPay: 0,
@@ -464,6 +464,56 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
         throw error;
     }
 }
+
+export const getOffersFromDB = async (userId: string) => {
+    // 1. Fetch the user
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new Error('User not found');
+    }
+
+    // 2. Build partial match conditions using $or
+    const orConditions: any[] = [
+        { 'audienceDetails.age': user.age },
+        { 'audienceDetails.education': user.educationalQualification },
+        { 'audienceDetails.profession': user.profession },
+        { 'audienceDetails.gender': user.gender },
+        { 'audienceDetails.religion': user.religion },
+        { 'audienceDetails.weight': user.weight },
+        { 'audienceDetails.height': user.height },
+        { 'audienceDetails.race': user.race },
+    ];
+
+    // Handle language(s)
+    if (Array.isArray(user.languages)) {
+        orConditions.push({ 'audienceDetails.language': { $in: user.languages } });
+    } else {
+        orConditions.push({ 'audienceDetails.language': user.languages });
+    }
+
+    // Handle interest(s)
+    if (Array.isArray(user.interests)) {
+        orConditions.push({ 'audienceDetails.interests': { $in: user.interests } });
+    } else {
+        orConditions.push({ 'audienceDetails.interests': user.interests });
+    }
+   
+    // 3. Query offers matching any of the above fields (partial match)
+    const offers = await Offer.find({ $or: orConditions });
+
+    // 4. Format and return offers
+    return offers.map((offer) => {
+        const obj = offer.toObject();
+        return {
+            ...obj,
+            appointmentDate: obj.appointmentDate?.toISOString(),
+            expirationDate: obj.expirationDate?.toISOString(),
+            appointmentTime: formatTime(obj.appointmentTime),
+            expirationTime: formatTime(obj.expirationTime),
+        };
+    });
+};
+
 /* 
 abc def ijk lmn opq rst uvw xyz
 offer id 

@@ -26,6 +26,7 @@ export interface IBaseUser extends Document {
 export interface IUser extends IBaseUser {
   role: "user";
   image :string;
+  race : string;
   age: string;
   gender: string;
   about: string;
@@ -43,6 +44,7 @@ export interface IUser extends IBaseUser {
   weight :  number;
   height : number;
   groupsAndAffiliation?: string;
+  interests?: string[]; // Array of interests or hobbies
   politicalViews?: 'right' | 'left' | 'others' | 'none';
   maritalStatus: 'single' | 'married';
   children?: 'yes' | 'no';
