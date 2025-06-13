@@ -8,21 +8,15 @@ const paymentSchema: Schema<IPayment> = new mongoose.Schema(
       required: true,
       trim: true,
     },
-    userId: {
+    user: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "User", // Adjust the ref according to your user model
-    },
-    subscriptionId: {
-      type: Schema.Types.ObjectId,
-      required: true,
-      ref: "Subscription", // Adjust the ref according to your subscription model
     },
     amount: {
       type: Number,
       required: true,
     },
-
     paymentData: {
       type: Object,
       required: true,

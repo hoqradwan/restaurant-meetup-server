@@ -8,7 +8,7 @@ export const getAllRestaurantBookingsFromDB = async(userId : string) =>{
     if(!restaurant){
         throw new Error("Restaurant not found");
     }
-    const restaurantBookings = await RestaurantBooking.find();
+    const restaurantBookings = await RestaurantBooking.find().populate("user");
     return restaurantBookings;
 }
 
@@ -95,3 +95,14 @@ export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => 
     throw new Error(`Transaction failed: ${error.message}`);
   }
 };
+
+
+export const getAllRestaurantBookingsByUserFromDB = async (userId : string) =>{
+    const user = await UserModel.findById(userId);
+    if(!user){
+        throw new Error("User not found");
+    }
+    const userBookings = await RestaurantBooking.find({user});
+    return userBookings;
+
+}
