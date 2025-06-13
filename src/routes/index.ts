@@ -11,20 +11,22 @@ import { MenuRoutes } from "../modules/Menu/menu.route";
 import { inviteRoutes } from "../modules/Invite/invite.route";
 import { offerRoutes } from "../modules/Offer/offer.route";
 import { RestaurantRoutes } from "../modules/Restaurant/restaurant.route";
+import { RestaurantBookingRoutes } from "../modules/RestaurantBooking/restaurantBooking.route";
 
 const router = express.Router();
 
-router.use("/api/v1/user", UserRoutes);
-router.use("/api/v1/menu", MenuRoutes); 
-router.use("/api/v1/invite", inviteRoutes); 
-router.use("/api/v1/offer", offerRoutes); 
-router.use("/api/v1/restaurant", RestaurantRoutes); 
-router.use("/api/v1/post", PostRoutes);
-router.use("/api/v1/terms", TermsRoutes);
-router.use("/api/v1/about", AboutRoutes);
-router.use("/api/v1/privacy", PrivacyRoutes);
-router.use("/api/v1/notification", NotificationRoutes);
-router.use("/api/v1/feedback", feedBackRoutes);
-router.use("/api/v1/purchase", paymentRoutes);
+router.use("/user", UserRoutes);
+router.use("/menu", MenuRoutes); 
+router.use("/invite", inviteRoutes); 
+router.use("/offer", offerRoutes); 
+router.use("/restaurant", RestaurantRoutes); 
+router.use("/restaurantBooking", RestaurantBookingRoutes); 
+router.use("/post", PostRoutes);
+router.use("/terms", TermsRoutes);
+router.use("/about", AboutRoutes);
+router.use("/privacy", PrivacyRoutes);
+router.use("/notification", NotificationRoutes);
+router.use("/feedback", feedBackRoutes);
+router.use("/purchase", paymentRoutes);
 
 export default router;

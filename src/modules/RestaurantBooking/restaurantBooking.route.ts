@@ -1,9 +1,10 @@
 import express from 'express';
 
 import { adminMiddleware } from '../../middlewares/auth';
-import { bookRestaurant } from './restaurantBooking.controller';
+import { bookRestaurant, getAllRestaurantBookings } from './restaurantBooking.controller';
 
 const router = express.Router();
-router.post("/book", adminMiddleware("user"), bookRestaurant)
+router.get("/", adminMiddleware("restaurant"), getAllRestaurantBookings)
+router.post("/", adminMiddleware("user"), bookRestaurant)
 export const RestaurantBookingRoutes = router;
 

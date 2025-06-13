@@ -35,7 +35,7 @@ app.use(logHttpRequests);
 // });
 
 //application router
-app.use(router);
+app.use("/api/v1", router)
 
 // Set the port number for the server
 

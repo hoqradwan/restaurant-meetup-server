@@ -1,5 +1,3 @@
-import { Server as HttpServer } from "http";
-import { Server as SocketIOServer } from "socket.io";
 import mongoose from "mongoose";
 import seedSuperAdmin from "./DB";
 import app from "./app";

@@ -1,11 +1,21 @@
 import mongoose from 'mongoose';
 import { RestaurantModel, UserModel } from '../user/user.model';
 import { Menu } from '../Menu/menu.model';
+import { RestaurantBooking } from './restaurantBooking.model';
+
+export const getAllRestaurantBookingsFromDB = async(userId : string) =>{
+    const restaurant = await RestaurantModel.findById(userId);
+    if(!restaurant){
+        throw new Error("Restaurant not found");
+    }
+    const restaurantBookings = await RestaurantBooking.find();
+    return restaurantBookings;
+}
 
 export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => {
-  const { restaurant, menuItems, date, time } = bookingData;
+  const { restaurant, menuItems, dateTime } = bookingData;
 
-  // Start a session
+  // Start a session for atomic operations
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -21,8 +31,19 @@ export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => 
     if (!restaurantExists) {
       throw new Error("Restaurant not found");
     }
+  
+    // Check if the user has already booked at the same restaurant for the same date and time
+    const existingBooking = await RestaurantBooking.findOne({
+      user: userId,
+      restaurant: restaurant,
+      dateTime
+    }).session(session);
 
-    let totalBill: number = 0;
+    if (existingBooking) {
+      throw new Error("You already have a booking at this restaurant for this date and time.");
+    }
+
+    let totalPrice: number = 0;
 
     // Ensure that all menu items belong to the specified restaurant and calculate the total bill
     const userMenuItemsExist = await Promise.all(
@@ -38,39 +59,36 @@ export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => 
         }
 
         // Add the price of the menu item to the total bill
-        const price = menuItem.price;
-        totalBill += price;
+        totalPrice += menuItem.price;
 
         return menuItem._id;
       })
     );
 
-    // Assuming you would store the booking information here
+    // Create the booking object
     const booking = {
       user: userId,
       restaurant,
       menuItems: userMenuItemsExist,
-      date,
-      time,
-      totalBill,
+      dateTime,  // Store UTC time for consistency
+      totalPrice,
     };
 
-    // Store the booking data (create booking document)
-    // Example: Create a new booking model (you should have a Booking model in your application)
-    // const bookingCreated = await BookingModel.create([booking]);
+    // Save the booking into the database
+    const newBooking = new RestaurantBooking(booking);
+    await newBooking.save({ session });
 
     // Commit the transaction if all steps are successful
     await session.commitTransaction();
     session.endSession();
 
-    // Return the booking data (or return something else if needed)
+    // Return the booking data
     return {
       message: "Booking successfully created",
-      totalBill,
-      bookingData: booking,
+      bookingData: newBooking,
     };
 
-  } catch (error : any) {
+  } catch (error: any) {
     // If any error occurs, abort the transaction
     await session.abortTransaction();
     session.endSession();

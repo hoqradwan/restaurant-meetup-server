@@ -22,7 +22,7 @@ const menuschema = new Schema({
 
     restaurant: {
         type: Schema.Types.ObjectId,
-        ref: 'User',
+        ref: 'restaurant',
         required: true,
         default : null,
     },
