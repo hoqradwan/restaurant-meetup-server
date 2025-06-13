@@ -10,6 +10,7 @@ import { PostRoutes } from "../modules/Post/post.route";
 import { MenuRoutes } from "../modules/Menu/menu.route";
 import { inviteRoutes } from "../modules/Invite/invite.route";
 import { offerRoutes } from "../modules/Offer/offer.route";
+import { RestaurantRoutes } from "../modules/Restaurant/restaurant.route";
 
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.use("/api/v1/user", UserRoutes);
 router.use("/api/v1/menu", MenuRoutes); 
 router.use("/api/v1/invite", inviteRoutes); 
 router.use("/api/v1/offer", offerRoutes); 
+router.use("/api/v1/restaurant", RestaurantRoutes); 
 router.use("/api/v1/post", PostRoutes);
 router.use("/api/v1/terms", TermsRoutes);
 router.use("/api/v1/about", AboutRoutes);

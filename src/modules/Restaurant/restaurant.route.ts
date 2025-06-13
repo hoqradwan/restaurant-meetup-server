@@ -5,4 +5,5 @@ import { createRestaurant } from './restaurant.controller';
 
 const router = express.Router();
 router.post("/", adminMiddleware("admin"), createRestaurant);
+export const RestaurantRoutes = router;
 

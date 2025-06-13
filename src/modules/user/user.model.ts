@@ -8,12 +8,12 @@ const PendingUserSchema = new Schema<IPendingUser>({
   lastName: { type: String, required: true, trim: true },
   password: { type: String, required: true, trim: true },
   confirmPassword: { type: String, required: true, trim: true },
-  establishmentName: { 
-    type: String, 
-    trim: true, 
+  establishmentName: {
+    type: String,
+    trim: true,
     required: function () {
       return this.role === "restaurant";
-    } 
+    }
   },
   role: { type: String, enum: ["user", "admin", "restaurant"], required: true },
 });
@@ -60,7 +60,7 @@ function extendSchema(baseSchema: Schema, extension: any, options?: SchemaOption
 const UserSchema = extendSchema(BaseUserSchema, {
   image: { type: String, default: "" },
   age: { type: String, default: "" },
-  race : { type: String, default: "" },
+  race: { type: String, default: "" },
   gender: { type: String, default: "" },
   about: { type: String, default: "" },
   bio: { type: String, default: "" },
@@ -80,20 +80,20 @@ const UserSchema = extendSchema(BaseUserSchema, {
   workExperience: { type: String, default: "" },
   religion: { type: String, default: "" },
   groupsAndAffiliation: { type: String, default: "" },
-  politicalViews: { 
-    type: String, 
+  politicalViews: {
+    type: String,
     enum: ["right", "left", "others", "none"],
-    default: "none" 
+    default: "none"
   },
-  maritalStatus: { 
-    type: String, 
+  maritalStatus: {
+    type: String,
     enum: ["single", "married"],
-    default: "single" 
+    default: "single"
   },
-  children: { 
-    type: String, 
+  children: {
+    type: String,
     enum: ["yes", "no"],
-    default: "no" 
+    default: "no"
   },
   languages: {
     type: [String],
@@ -101,7 +101,6 @@ const UserSchema = extendSchema(BaseUserSchema, {
     default: ["English"],
   },
   interests: { type: [String], default: [] },
-  
 }, {
   timestamps: true
 });
@@ -117,7 +116,7 @@ const RestaurantSchema = extendSchema(BaseUserSchema, {
 
 // Register discriminator
 export const RestaurantModel = BaseUserModel.discriminator<IRestaurant>(
-  "restaurant", 
+  "restaurant",
   RestaurantSchema
 );
 const AdminSchema = extendSchema(BaseUserSchema, {

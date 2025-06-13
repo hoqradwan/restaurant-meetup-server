@@ -1,0 +1,18 @@
+import { Response } from "express";
+import catchAsync from "../../utils/catchAsync";
+import { CustomRequest } from "../../utils/customRequest";
+import sendResponse from "../../utils/sendResponse";
+import { bookRestaurantIntoDB } from "./restaurantBooking.service";
+
+export const bookRestaurant = catchAsync(async (req: CustomRequest, res: Response) => {
+    const { id: userId } = req.user;
+    const bookingData = req.body;
+    const result = await bookRestaurantIntoDB(userId, bookingData);
+
+    sendResponse(res, {
+        statusCode: 201,
+        success: true,
+        message: "Restaurant booked successfully",
+        data: result
+    });
+});

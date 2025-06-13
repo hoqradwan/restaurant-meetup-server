@@ -150,9 +150,7 @@ export const createOfferIntoDB = async (
         if (!orgamizerWallet) {
 
             throw new Error('Organizer wallet not found');
-
         }
-
 
         if (orgamizerWallet.totalBalance < organizerTotalAmount) {
             throw new Error('Insufficient Balance');
