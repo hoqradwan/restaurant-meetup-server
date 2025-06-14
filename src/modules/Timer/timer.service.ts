@@ -6,6 +6,7 @@ let timerEndTime : any = null;
 
 // Start Meetup Service with transaction
 export const startMeetupIntoDB = async (userId: string, meetupData: any) => {
+    const {} = meetupData;
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
