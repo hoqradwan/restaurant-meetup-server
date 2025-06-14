@@ -5,6 +5,7 @@ const restaurantBookingSchema = new Schema({
     restaurant: { type: Schema.Types.ObjectId, required: true, ref: "restaurant" },
     menuItems: [{ type: Schema.Types.ObjectId, required: true, ref: "Menu" }],
     dateTime: { type: Date, required: true, default: "" },
+    numberOfPeople: { type: Number, required: true, default: 1 },
     totalPrice: { type: Number, required: true }
 }, {
     timestamps: true

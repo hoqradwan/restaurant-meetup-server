@@ -14,7 +14,7 @@ export const getAllRestaurantBookingsFromDB = async (userId: string) => {
 }
 
 export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => {
-    const { restaurant, menuItems, dateTime } = bookingData;
+    const { restaurant, menuItems, dateTime, numberOfPeople } = bookingData;
 
     // Start a session for atomic operations
     const session = await mongoose.startSession();
@@ -84,6 +84,7 @@ export const bookRestaurantIntoDB = async (userId: string, bookingData: any) => 
             user: userId,
             restaurant,
             menuItems: userMenuItemsExist,
+            numberOfPeople : numberOfPeople || 1,  // Default to 1 if not provided
             dateTime,  // Store UTC time for consistency
             totalPrice,
         };
