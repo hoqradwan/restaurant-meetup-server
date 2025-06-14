@@ -5,7 +5,6 @@ import sendResponse from "../../utils/sendResponse";
 import { bookRestaurantIntoDB, getAllRestaurantBookingsByUserFromDB, getAllRestaurantBookingsFromDB } from "./restaurantBooking.service";
 
 export const bookRestaurant = catchAsync(async (req: CustomRequest, res: Response) => {
-
     const { id: userId } = req.user;
     const bookingData = req.body;
     const result = await bookRestaurantIntoDB(userId, bookingData);

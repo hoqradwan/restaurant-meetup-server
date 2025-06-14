@@ -22,7 +22,6 @@ export const startMeetupIntoDB = async () => {
 
   // Return the elapsed time in the format "Xh Ym Zs"
   return {
-    message: 'Meetup ended successfully',
     elapsedTime: `${hours}h ${minutes}m ${seconds}s`,
   };
 };

@@ -14,8 +14,7 @@ const walletSchema = new Schema({
     {
         type: Number,
         default: 0,
-    }
-    ,
+    },
     type: {
         type: String,
         enum: ["restaurant", "user"],
