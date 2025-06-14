@@ -207,8 +207,6 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 );
                 UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             }
-
-
         } else if (contribution === "Organizer pay for all") {
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
@@ -240,7 +238,6 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                         };
                     })
                 );
-
                 UserInvitationProcess = await UserInvitationProcessModel.create([{ invite: invite[0]._id, participantsInProcess: [...participantsInPrecessTmp, ...processingParticipantData] }], { session });
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
