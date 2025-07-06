@@ -149,16 +149,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
-                await Wallet.findOneAndUpdate(
-                    { user: user._id },
-                    { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
-                    { new: true, session }
-                );
-                await Wallet.findOneAndUpdate(
-                    { user: restaurant },
-                    { $inc: { totalBalance: organizerTotalAmount } },
-                    { new: true, session }
-                );
+                // await Wallet.findOneAndUpdate(
+                //     { user: user._id },
+                //     { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
+                //     { new: true, session }
+                // );
+                // await Wallet.findOneAndUpdate(
+                //     { user: restaurant },
+                //     { $inc: { totalBalance: organizerTotalAmount } },
+                //     { new: true, session }
+                // );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -179,16 +179,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
-                await Wallet.findOneAndUpdate(
-                    { user: user._id },
-                    { $inc: { totalBalance: -organizerTotalAmount } },
-                    { new: true, session }
-                );
-                await Wallet.findOneAndUpdate(
-                    { user: restaurant },
-                    { $inc: { totalBalance: organizerTotalAmount } },
-                    { new: true, session }
-                );
+                // await Wallet.findOneAndUpdate(
+                //     { user: user._id },
+                //     { $inc: { totalBalance: -organizerTotalAmount } },
+                //     { new: true, session }
+                // );
+                // await Wallet.findOneAndUpdate(
+                //     { user: restaurant },
+                //     { $inc: { totalBalance: organizerTotalAmount } },
+                //     { new: true, session }
+                // );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -212,16 +212,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
 
-                await Wallet.findOneAndUpdate(
-                    { user: user._id },
-                    { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
-                    { new: true, session }
-                );
-                await Wallet.findOneAndUpdate(
-                    { user: restaurant },
-                    { $inc: { totalBalance: organizerTotalAmount } },
-                    { new: true, session }
-                );
+                // await Wallet.findOneAndUpdate(
+                //     { user: user._id },
+                //     { $inc: { totalBalance: -(organizerTotalAmount + extraChargeAmount) } },
+                //     { new: true, session }
+                // );
+                // await Wallet.findOneAndUpdate(
+                //     { user: restaurant },
+                //     { $inc: { totalBalance: organizerTotalAmount } },
+                //     { new: true, session }
+                // );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -242,16 +242,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             } else if (extraChargeType === "Participants pay organizer") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
-                await Wallet.findOneAndUpdate(
-                    { user: user._id },
-                    { $inc: { totalBalance: -organizerTotalAmount + extraChargeAmount } },
-                    { new: true, session }
-                );
-                await Wallet.findOneAndUpdate(
-                    { user: restaurant },
-                    { $inc: { totalBalance: organizerTotalAmount } },
-                    { new: true, session }
-                );
+                // await Wallet.findOneAndUpdate(
+                //     { user: user._id },
+                //     { $inc: { totalBalance: -organizerTotalAmount + extraChargeAmount } },
+                //     { new: true, session }
+                // );
+                // await Wallet.findOneAndUpdate(
+                //     { user: restaurant },
+                //     { $inc: { totalBalance: organizerTotalAmount } },
+                //     { new: true, session }
+                // );
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
@@ -281,11 +281,11 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         } else if (contribution === "Participants pay organizer") {
             if (extraChargeType === "Organizer pays participants") {
                 let eachParticipantAmount = extraChargeAmount / participants.length;
-                await Wallet.findOneAndUpdate(
-                    { user: user._id },
-                    { $inc: { totalBalance: -extraChargeAmount } },
-                    { new: true, session }
-                );
+                // await Wallet.findOneAndUpdate(
+                //     { user: user._id },
+                //     { $inc: { totalBalance: -extraChargeAmount } },
+                //     { new: true, session }
+                // );
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: 0, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
                 const processingParticipantData = await Promise.all(
                     participants.map(async (p: { user: string }) => {
@@ -355,7 +355,6 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
         if (!user) {
             throw new Error("User not found");
         }
-
         // Find the invite and populate commonDetailsOfferOrInvite
         const invite = await Invite.findById(inviteId).session(session).populate("commonDetailsOfferOrInvite");
         if (!invite) {
@@ -434,23 +433,23 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                             },
                             { new: true, session }
                         );
-                        await Wallet.findOneAndUpdate(
-                            { user: user._id },
-                            { $inc: { totalBalance: p.extraChargeAmountToGet } },
-                            { new: true, session }
-                        );
+                        // await Wallet.findOneAndUpdate(
+                        //     { user: user._id },
+                        //     { $inc: { totalBalance: p.extraChargeAmountToGet } },
+                        //     { new: true, session }
+                        // );
                     } else if (invite.contribution === "Each pay their own") {
-                        await Wallet.findOneAndUpdate(
-                            { user: user._id },
-                            { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
-                            { new: true, session }
-                        );
-                        await Wallet.findOneAndUpdate(
-                            { user: invite.restaurant },
-                            { $inc: { totalBalance: userTotalAmount } },
-                            { new: true, session }
-                        );
-                        p.status = "Paid";
+                        // await Wallet.findOneAndUpdate(
+                        //     { user: user._id },
+                        //     { $inc: { totalBalance: -userTotalAmount + p.extraChargeAmountToGet } },
+                        //     { new: true, session }
+                        // );
+                        // await Wallet.findOneAndUpdate(
+                        //     { user: invite.restaurant },
+                        //     { $inc: { totalBalance: userTotalAmount } },
+                        //     { new: true, session }
+                        // );
+                        // p.status = "Paid";
                         p.amountToPay = userTotalAmount;
 
                     } else if (invite.contribution === "Participants pay organizer") {
@@ -473,17 +472,17 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                             })
                         );
                         const eachParticipantAmount = invite.extraChargeAmount / invite.participants.length - 1;
-                        await Wallet.findOneAndUpdate(
-                            { user: user._id },
-                            { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount) + p.extraChargeAmountToGet } },
-                            { new: true, session }
-                        );
-                        await Wallet.findOneAndUpdate(
-                            { user: invite.restaurant },
-                            { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
-                            { new: true, session }
-                        );
-                        p.status = "Paid";
+                        // await Wallet.findOneAndUpdate(
+                        //     { user: user._id },
+                        //     { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount) + p.extraChargeAmountToGet } },
+                        //     { new: true, session }
+                        // );
+                        // await Wallet.findOneAndUpdate(
+                        //     { user: invite.restaurant },
+                        //     { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
+                        //     { new: true, session }
+                        // );
+                        // p.status = "Paid";
                         p.amountToPay = userTotalAmount;
                     }
 
@@ -509,24 +508,24 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                                 },
                                 { new: true, session }
                             );
-                            await Wallet.findOneAndUpdate(
-                                { user: user._id },
-                                { $inc: { totalBalance: -p.extraChargeAmountToPay } },
-                                { new: true, session }
-                            );
+                            // await Wallet.findOneAndUpdate(
+                            //     { user: user._id },
+                            //     { $inc: { totalBalance: -p.extraChargeAmountToPay } },
+                            //     { new: true, session }
+                            // );
                         }
                         else if (invite.contribution === "Each pay their own") {
-                            await Wallet.findOneAndUpdate(
-                                { user: user._id },
-                                { $inc: { totalBalance: -(userTotalAmount + p.extraChargeAmountToPay) } },
-                                { new: true, session }
-                            );
-                            await Wallet.findOneAndUpdate(
-                                { user: invite.restaurant },
-                                { $inc: { totalBalance: userTotalAmount } },
-                                { new: true, session }
-                            );
-                            p.status = "Paid";
+                            // await Wallet.findOneAndUpdate(
+                            //     { user: user._id },
+                            //     { $inc: { totalBalance: -(userTotalAmount + p.extraChargeAmountToPay) } },
+                            //     { new: true, session }
+                            // );
+                            // await Wallet.findOneAndUpdate(
+                            //     { user: invite.restaurant },
+                            //     { $inc: { totalBalance: userTotalAmount } },
+                            //     { new: true, session }
+                            // );
+                            // p.status = "Paid";
                             p.amountToPay = userTotalAmount;
 
                         } else if (invite.contribution === "Participants pay organizer") {
@@ -549,17 +548,17 @@ export const acceptInviteInDB = async (inviteData: any, userId: string) => {
                                 })
                             );
                             const eachParticipantAmount = invite.extraChargeAmount / invite.participants.length - 1;
-                            await Wallet.findOneAndUpdate(
-                                { user: user._id },
-                                { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount + p.extraChargeAmountToPay) } },
-                                { new: true, session }
-                            );
-                            await Wallet.findOneAndUpdate(
-                                { user: invite.restaurant },
-                                { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
-                                { new: true, session }
-                            );
-                            p.status = "Paid";
+                            // await Wallet.findOneAndUpdate(
+                            //     { user: user._id },
+                            //     { $inc: { totalBalance: -(userTotalAmount + eachParticipantAmount + p.extraChargeAmountToPay) } },
+                            //     { new: true, session }
+                            // );
+                            // await Wallet.findOneAndUpdate(
+                            //     { user: invite.restaurant },
+                            //     { $inc: { totalBalance: userTotalAmount + eachParticipantAmount } },
+                            //     { new: true, session }
+                            // );
+                            // p.status = "Paid";
                             p.amountToPay = userTotalAmount;
                         }
                     }
