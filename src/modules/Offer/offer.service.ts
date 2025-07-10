@@ -238,31 +238,31 @@ export const createOfferIntoDB = async (
             }
         }
 
-        if (contribution === "Participants pay organizer") {
-            if (extraChargeType === "Participants pay organizer") {
-                participantsToInclude.push({
-                    user: user._id,
-                    amountToPay: 0,
-                    organizerMenuItemsToPay: organizerTotalAmount,
-                    participantMenutItemsToPay: 0,
-                    extraChargeAmountToGet: extraChargeAmount,
-                    extraChargeAmountToPay: 0,
-                    status: "Accepted"
-                });
-                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
-            } else if (extraChargeType === "Organizer pays participants") {
-                participantsToInclude.push({
-                    user: user._id,
-                    amountToPay: 0,
-                    organizerMenuItemsToPay: organizerTotalAmount,
-                    participantMenutItemsToPay: 0,
-                    extraChargeAmountToGet: 0,
-                    extraChargeAmountToPay: extraChargeAmount,
-                    status: "Accepted"
-                });
-                await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
-            }
-        }
+        // if (contribution === "Participants pay organizer") {
+        //     if (extraChargeType === "Participants pay organizer") {
+        //         participantsToInclude.push({
+        //             user: user._id,
+        //             amountToPay: 0,
+        //             organizerMenuItemsToPay: organizerTotalAmount,
+        //             participantMenutItemsToPay: 0,
+        //             extraChargeAmountToGet: extraChargeAmount,
+        //             extraChargeAmountToPay: 0,
+        //             status: "Accepted"
+        //         });
+        //         await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+        //     } else if (extraChargeType === "Organizer pays participants") {
+        //         participantsToInclude.push({
+        //             user: user._id,
+        //             amountToPay: 0,
+        //             organizerMenuItemsToPay: organizerTotalAmount,
+        //             participantMenutItemsToPay: 0,
+        //             extraChargeAmountToGet: 0,
+        //             extraChargeAmountToPay: extraChargeAmount,
+        //             status: "Accepted"
+        //         });
+        //         await UserOfferProcessModel.create([{ offer: offer[0]._id, participantsInProcess: participantsToInclude }], {});
+        //     }
+        // }
 
         await session.commitTransaction();
         session.endSession();

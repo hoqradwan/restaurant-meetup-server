@@ -2,7 +2,10 @@ import { Schema, model, Types } from 'mongoose';
 
 const InviteSchema = new Schema({
     organizer: { type: Types.ObjectId, required: true, ref: 'User' },
-    image: { type: String, required: true, default: "" },
+    media: {
+        url: { type: String, required: true, default: "" },
+        type: { type: String, enum: ['image', 'video'], required: true, default: 'image' }
+    },
     appointmentDate: { type: Date, required: true },
     description: { type: String, required: true },
     appointmentTime: { type: String, required: true },
