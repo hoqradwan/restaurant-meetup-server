@@ -387,8 +387,6 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                 });
                 await userOfferProcess.save({ session });
             }
-
-
         } else if (offer.contribution === "Organizer pay for all") {
             await UserOfferProcessModel.findOneAndUpdate(
                 {
@@ -422,31 +420,32 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                 });
                 await userOfferProcess.save({ session });
             }
-        } else if (offer.contribution === "Participants pay organizer") {
-            if (offer.extraChargeType === "Participants pay organizer") {
-                userOfferProcess.participantsInProcess.push({
-                    user: user._id,
-                    amountToPay: 0,
-                    organizerMenuItemsToPay: 0,
-                    participantMenutItemsToPay: 0,
-                    extraChargeAmountToGet: 0,
-                    extraChargeAmountToPay: offer.extraChargeAmount,
-                    status: "Processing"
-                });
-                await userOfferProcess.save({ session });
-            } else if (offer.extraChargeType === "Organizer pays participants") {
-                userOfferProcess.participantsInProcess.push({
-                    user: user._id,
-                    amountToPay: 0,
-                    organizerMenuItemsToPay: 0,
-                    participantMenutItemsToPay: 0,
-                    extraChargeAmountToGet: offer.extraChargeAmount,
-                    extraChargeAmountToPay: 0,
-                    status: "Processing"
-                });
-                await userOfferProcess.save({ session });
-            }
-        }
+        } 
+        // else if (offer.contribution === "Participants pay organizer") {
+        //     if (offer.extraChargeType === "Participants pay organizer") {
+        //         userOfferProcess.participantsInProcess.push({
+        //             user: user._id,
+        //             amountToPay: 0,
+        //             organizerMenuItemsToPay: 0,
+        //             participantMenutItemsToPay: 0,
+        //             extraChargeAmountToGet: 0,
+        //             extraChargeAmountToPay: offer.extraChargeAmount,
+        //             status: "Processing"
+        //         });
+        //         await userOfferProcess.save({ session });
+        //     } else if (offer.extraChargeType === "Organizer pays participants") {
+        //         userOfferProcess.participantsInProcess.push({
+        //             user: user._id,
+        //             amountToPay: 0,
+        //             organizerMenuItemsToPay: 0,
+        //             participantMenutItemsToPay: 0,
+        //             extraChargeAmountToGet: offer.extraChargeAmount,
+        //             extraChargeAmountToPay: 0,
+        //             status: "Processing"
+        //         });
+        //         await userOfferProcess.save({ session });
+        //     }
+        // }
 
         // Add the user to the participants list
         await offer.save({ session });

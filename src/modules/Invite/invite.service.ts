@@ -6,7 +6,6 @@ import Invite from "./invite.model";
 import { formatTime, generateTicketNumber } from "./invite.utils";
 import mongoose from 'mongoose';
 
-
 export const createInviteIntoDB = async (inviteData: any, userId: string, image: string) => {
     const session = await mongoose.startSession(); // Start a session for the transaction
     session.startTransaction(); // Begin the transaction
