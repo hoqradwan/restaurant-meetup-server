@@ -10,12 +10,9 @@ const OfferSchema = new Schema({
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
     agenda: { type: String, required: true },
-    fbUrl: { type: String, required: true, default: "" },
-    instaUrl: { type: String, required: true, default: "" },
-    linkedinUrl: { type: String, required: true, default: "" },
     contribution: {
         type: String,
-        enum: ['Each pay their own', 'Organizer pay for all', 'Participants pay organizer'],
+        enum: ['Each pay their own', 'Organizer pay for all'],
         required: true,
     },
     extraChargeType: {

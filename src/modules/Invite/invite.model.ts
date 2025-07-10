@@ -10,9 +10,7 @@ const InviteSchema = new Schema({
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
     agenda: { type: String, required: true },
-    fbUrl: { type: String, required: true, default: "" },
-    instaUrl: { type: String, required: true, default: "" },
-    linkedinUrl: { type: String, required: true, default: "" },
+    orderLimit : {type : String ,required : true},
     contribution: {
         type: String,
         enum: ['Each pay their own', 'Organizer pay for all', 'Participants pay organizer'],

@@ -1,4 +1,3 @@
-import { extra } from "http-status";
 import { formatTime } from "../Invite/invite.utils";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
