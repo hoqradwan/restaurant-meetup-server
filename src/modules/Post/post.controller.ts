@@ -17,10 +17,7 @@ export const createPost = catchAsync(async (req: CustomRequest, res: Response) =
             Array.isArray((req.files as { [fieldname: string]: Express.Multer.File[] })["image"])
             ? ((req.files as { [fieldname: string]: (Express.Multer.File & { location?: string })[] })["image"][0].location ?? null)
             : null;
-    // 3. Parse the description - handle both direct and JSON formats
-
-
-    // 5. Create post
+   
     const result = await createPostIntoDB(userId, postData as Partial<IPost>, image as string);
 
     // 6. Send response

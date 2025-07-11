@@ -5,6 +5,8 @@ import upload from '../../middlewares/fileUploadNormal';
 
 const router = express.Router();
 
-router.post("/", adminMiddleware("user"), upload.single("image"), createInvite);
-router.post("/accept", adminMiddleware("user"),  acceptInvite);
+router.post("/", adminMiddleware("user"), upload.fields([
+    { name: "image", maxCount: 1 },
+]), createInvite);
+router.post("/accept", adminMiddleware("user"), acceptInvite);
 export const inviteRoutes = router;

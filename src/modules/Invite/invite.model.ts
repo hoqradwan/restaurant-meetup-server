@@ -13,7 +13,7 @@ const InviteSchema = new Schema({
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
     agenda: { type: String, required: true },
-    orderLimit : {type : String ,required : true},
+    orderLimitPerParticipant : {type : Number ,required : true},
     contribution: {
         type: String,
         enum: ['Each pay their own', 'Organizer pay for all', 'Participants pay organizer'],

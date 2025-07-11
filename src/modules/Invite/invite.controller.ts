@@ -6,9 +6,15 @@ import { acceptInviteInDB, createInviteIntoDB } from "./invite.service";
 
 export const createInvite = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId } = req.user;
-    const formattedInviteData = JSON.parse(req.body.data);
-   
-    const result = await createInviteIntoDB(formattedInviteData, userId, req.body.image);
+    const inviteData = req.body;
+    const image =
+        req.files &&
+            typeof req.files === "object" &&
+            "image" in req.files &&
+            Array.isArray((req.files as { [fieldname: string]: Express.Multer.File[] })["image"])
+            ? ((req.files as { [fieldname: string]: (Express.Multer.File & { location?: string })[] })["image"][0].location ?? null)
+            : null;
+    const result = await createInviteIntoDB(inviteData, userId, image as string);
     sendResponse(res, {
         statusCode: 201,
         success: true,
@@ -20,7 +26,7 @@ export const createInvite = catchAsync(async (req: CustomRequest, res: Response)
 
 export const acceptInvite = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId } = req.user;
-    const InviteData  = req.body;
+    const InviteData = req.body;
 
     // Assuming you have a function to handle the acceptance of the invite
     const result = await acceptInviteInDB(InviteData, userId);
