@@ -20,10 +20,31 @@ export const getAllPostsFromDB = async () => {
             select: 'firstName lastName image'
         })
         .populate({
+            path: 'likes',
+            select: 'firstName lastName image'
+        })
+        .populate({
             path: 'comments.user',
             select: 'firstName lastName image'
         });
-    return posts;
+
+    // Move user data from comments.user to comments, flattening the structure
+    const postsWithFlattenedComments = posts.map(post => {
+        const postObj = post.toObject();
+        const comments = postObj.comments?.map((comment: any) => ({
+            ...comment.user, // spread user fields directly into comment object
+            message: comment.message,
+            _id: comment._id
+        })) || [];
+        return {
+            ...postObj,
+            comments,
+            likeCount: postObj.likes ? postObj.likes.length : 0,
+            commentCount: comments.length
+        };
+    });
+
+    return postsWithFlattenedComments;
 }
 
 export const likeAPostIntoDB = async (userId: string, postId: string) => {
@@ -39,4 +60,18 @@ export const likeAPostIntoDB = async (userId: string, postId: string) => {
         { new: true }
     );
     return like;
+}
+export const commentAPostIntoDB = async (userId: string, postId: string, message : string) => {
+    const user = await UserModel.findById(userId);
+    if (!user) {
+        throw new Error("User not found");
+    }
+    // $addToSet adds userId only if it's not already present in the likes array (prevents duplicates).
+    // $push would add userId to the likes array even if it already exists (allows duplicates).
+    const comment = await Post.findByIdAndUpdate(
+        postId,
+        { $addToSet: { comments: {user: userId, message} } },
+        { new: true }
+    );
+    return comment;
 }

@@ -3,6 +3,7 @@ import express from "express";
 const router = express.Router();
 
 import {
+  commentAPost,
   createPost,
   getAllPosts,
   likeAPost,
@@ -16,5 +17,6 @@ router.post('/', adminMiddleware("user"), upload.fields([
 ]), createPost);
 router.get('/', adminMiddleware("user"), getAllPosts);
 router.post('/like/:postId', adminMiddleware("user"), likeAPost);
+router.post('/comment/:postId', adminMiddleware("user"), commentAPost);
 
 export const PostRoutes = router;
