@@ -12,20 +12,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
 
     try {
         const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
-        // console.log(
-        //     appointmentDate, 
-        //     appointmentTime, 
-        //     duration, 
-        //     description, 
-        //     restaurant, 
-        //     organizerMenuItems, 
-        //     expirationDate, 
-        //     expirationTime, 
-        //     agenda, 
-        //     typeof participants, 
-        //     contribution, 
-        //     extraChargeType, 
-        //     extraChargeAmount)
+       
         const formattedParticipants = JSON.parse(participants);
         const formattedorganizerMenuItems = JSON.parse(organizerMenuItems);
         // console.log(formattedParticipants)
