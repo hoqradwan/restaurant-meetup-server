@@ -6,8 +6,8 @@ import { acceptOfferIntoDB, createOfferIntoDB, getOffersFromDB } from "./offer.s
 
 export const createOffer = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId } = req.user;
-    const formattedOfferData = JSON.parse(req.body.data);
-    const resuult = await createOfferIntoDB(userId, formattedOfferData, req.body.image);
+    const offerData = req.body;
+    const resuult = await createOfferIntoDB(userId, offerData, req.body.image);
     sendResponse(res, {
         statusCode: 200,
         success: true,

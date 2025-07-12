@@ -9,6 +9,7 @@ export const UserInvitationProcessSchema = new Schema({
             extraChargeAmountToGet: { type: Number, required: true, default: 0 },
             status: { type: String, enum: ['Pending', 'Accepted','Paid', 'Declined'], required: true, default: 'Pending' }
         }],
+        //  after accepting the invite 
 }, { timestamps: true });
 export const UserInvitationProcessModel = model('UserInvitationProcess', UserInvitationProcessSchema);
 
