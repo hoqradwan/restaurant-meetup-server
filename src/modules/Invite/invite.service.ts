@@ -6,13 +6,29 @@ import Invite from "./invite.model";
 import { formatTime, generateTicketNumber } from "./invite.utils";
 import mongoose from 'mongoose';
 
-export const createInviteIntoDB = async (inviteData: any, userId: string, image: string) => {
+export const createInviteIntoDB = async (inviteData: any, userId: string, mediaUrl: string, fileCategory: string) => {
     const session = await mongoose.startSession(); // Start a session for the transaction
     session.startTransaction(); // Begin the transaction
 
     try {
-        const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount } = inviteData;
-
+        const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
+        // console.log(
+        //     appointmentDate, 
+        //     appointmentTime, 
+        //     duration, 
+        //     description, 
+        //     restaurant, 
+        //     organizerMenuItems, 
+        //     expirationDate, 
+        //     expirationTime, 
+        //     agenda, 
+        //     typeof participants, 
+        //     contribution, 
+        //     extraChargeType, 
+        //     extraChargeAmount)
+        const formattedParticipants = JSON.parse(participants);
+        const formattedorganizerMenuItems = JSON.parse(organizerMenuItems);
+        // console.log(formattedParticipants)
         // Find the user
         const user = await UserModel.findById(userId).session(session);
         if (!user) {
@@ -71,7 +87,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
 
         // Get participant data and validate selected menu items
         const participantData = await Promise.all(
-            participants.map(async (p: { user: string }) => {
+            formattedParticipants.map(async (p: { user: string }) => {
                 const participant = await UserModel.findById(p.user).session(session);
                 if (!participant) {
                     throw new Error(`Participant user with ID ${p.user} not found`);
@@ -88,7 +104,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
         );
         let organizerTotalAmount = 0;
         const organizerMenuItemsExist = await Promise.all(
-            organizerMenuItems.map(async (menuItemId: string) => {
+            formattedorganizerMenuItems.map(async (menuItemId: string) => {
                 const menuItem = await Menu.findById(menuItemId).session(session);
                 if (!menuItem) {
                     throw new Error(`Menu item with ID ${menuItemId} not found`);
@@ -106,22 +122,22 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             if (!orgamizerWallet) {
                 throw new Error("Organizer wallet not found");
             }
-            if (orgamizerWallet.totalBalance < organizerTotalAmount) {
-                throw new Error("Insufficient Balance");
-            }
+            // if (orgamizerWallet.totalBalance < organizerTotalAmount) {
+            //     throw new Error("Insufficient Balance");
+            // }
         }
         if (extraChargeType === "Organizer pays participants") {
             const orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
             if (!orgamizerWallet) {
                 throw new Error("Organizer wallet not found");
             }
-            if (orgamizerWallet.totalBalance < extraChargeAmount) {
-                throw new Error("Insufficient Balance");
-            }
+            // if (orgamizerWallet.totalBalance < extraChargeAmount) {
+            //     throw new Error("Insufficient Balance");
+            // }
         }
         // Add common details to invite data
         const inviteDataWithDetails = {
-            organizer: user._id, participants: participantData, restaurant, image,
+            organizer: user._id, participants: participantData, restaurant,
             appointmentDate,
             agenda,
             description,
@@ -129,12 +145,11 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
             duration,
             expirationDate,
             expirationTime: formattedExpirationTime,
-            fbUrl: user.facebookUrl,
-            instaUrl: user.instagramUrl,
-            linkedinUrl: user.linkedinUrl,
             contribution,
             extraChargeType,
             extraChargeAmount,
+            orderLimitPerParticipant,
+            media: { url: mediaUrl, type: fileCategory },
             ticketNumber,
             status: "Pending",
         };
@@ -159,7 +174,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 //     { new: true, session }
                 // );
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);
@@ -189,7 +204,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 //     { new: true, session }
                 // );
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);
@@ -222,7 +237,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 //     { new: true, session }
                 // );
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);
@@ -252,7 +267,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 //     { new: true, session }
                 // );
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);
@@ -287,7 +302,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 // );
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: 0, extraChargeAmountToGet: 0, extraChargeAmountToPay: extraChargeAmount, status: "Accepted" });
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);
@@ -307,7 +322,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, image:
                 let eachParticipantAmount = extraChargeAmount / participants.length;
                 participantsInPrecessTmp.push({ user: user._id, amountToPay: organizerTotalAmount, extraChargeAmountToGet: extraChargeAmount, extraChargeAmountToPay: 0, status: "Accepted" });
                 const processingParticipantData = await Promise.all(
-                    participants.map(async (p: { user: string }) => {
+                    formattedParticipants.map(async (p: { user: string }) => {
                         const participant = await UserModel.findById(p.user).session(session);
                         if (!participant) {
                             throw new Error(`Participant user with ID ${p.user} not found`);

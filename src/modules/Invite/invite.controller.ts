@@ -35,11 +35,11 @@ export const createInvite = catchAsync(async (req: CustomRequest, res: Response)
         Array.isArray((req.files as { [fieldname: string]: Express.Multer.File[] })["media"])
         ? ((req.files as { [fieldname: string]: (Express.Multer.File & { location?: string })[] })["media"][0])
         : null;
-
+    let fileCategory;
     // Validate file type if provided
     if (mediaFile) {
         const extName = path.extname(mediaFile.originalname).toLowerCase();
-        const fileCategory = getFileTypeCategory(extName);
+         fileCategory = getFileTypeCategory(extName);
         
         if (!fileCategory || (fileCategory !== "image" && fileCategory !== "video")) {
             return res.status(400).json({
@@ -59,10 +59,10 @@ export const createInvite = catchAsync(async (req: CustomRequest, res: Response)
     
     // Extract the S3 URL from the uploaded file
     const mediaUrl = mediaFile?.location || null;
-            console.log(mediaUrl)
+
 
     // Create invite with media URL
-    const result = await createInviteIntoDB(inviteData, userId, mediaUrl as string);
+    const result = await createInviteIntoDB(inviteData, userId, mediaUrl as string, fileCategory as string);
     
     sendResponse(res, {
         statusCode: 201,
