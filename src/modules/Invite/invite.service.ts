@@ -126,6 +126,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
             //     throw new Error("Insufficient Balance");
             // }
         }
+        // fkjkjk
         if (extraChargeType === "Organizer pays participants") {
             const orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
             if (!orgamizerWallet) {
