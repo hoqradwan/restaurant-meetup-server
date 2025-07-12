@@ -51,6 +51,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
         if (overlappingOffer) {
             throw new Error('There is already an invitation overlapping this time period.');
         }
+        
 
         const activeOfferForRestaurant = await Invite.findOne({
             restaurant,
