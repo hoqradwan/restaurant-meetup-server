@@ -1,5 +1,4 @@
 import express from 'express';
-
 import { adminMiddleware } from '../../middlewares/auth';
 import { bookRestaurant, getAllRestaurantBookings, getAllRestaurantBookingsByUser } from './restaurantBooking.controller';
 

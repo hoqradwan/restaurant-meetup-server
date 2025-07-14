@@ -12,10 +12,12 @@ import { inviteRoutes } from "../modules/Invite/invite.route";
 import { offerRoutes } from "../modules/Offer/offer.route";
 import { RestaurantRoutes } from "../modules/Restaurant/restaurant.route";
 import { RestaurantBookingRoutes } from "../modules/RestaurantBooking/restaurantBooking.route";
+import { walletRoutes } from "../modules/Wallet/wallet.route";
 
 const router = express.Router();
 
 router.use("/user", UserRoutes);
+router.use("/wallet", walletRoutes);
 router.use("/menu", MenuRoutes); 
 router.use("/invite", inviteRoutes); 
 router.use("/offer", offerRoutes); 
