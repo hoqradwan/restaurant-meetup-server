@@ -1,3 +1,4 @@
+import { GroupChat } from "../GroupChat/groupChat.model";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
@@ -329,14 +330,18 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
             }
 
         }
-
+        const groupChat = await GroupChat.create([{
+            participants: participantData.map(p => p.user),
+            invite: invite[0]._id,
+            restaurant: isRestaurantExists._id
+        }], { session }); // Create group chat for the invite
 
 
         // Commit the transaction if everything goes well
         await session.commitTransaction();
         session.endSession();
 
-        return { UserInvitationProcess, invite };
+        return { UserInvitationProcess, invite, groupChat };
     } catch (error) {
         // Rollback the transaction if an error occurs
         await session.abortTransaction();

@@ -9,3 +9,6 @@ router.get("/user", adminMiddleware("user"), getAllRestaurantBookingsByUser)
 router.post("/", adminMiddleware("user"), bookRestaurant)
 export const RestaurantBookingRoutes = router;
 
+// accept ivite
+// entry into offer
+
