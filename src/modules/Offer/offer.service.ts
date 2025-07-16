@@ -1,3 +1,4 @@
+import Invite from "../Invite/invite.model";
 import { formatTime } from "../Invite/invite.utils";
 import { Menu } from "../Menu/menu.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
@@ -100,6 +101,14 @@ export const createOfferIntoDB = async (
         if (overlappingOffer) {
             throw new Error('There is already an offer overlapping this time period.');
         }
+        const overlappingInvite = await Invite.findOne({
+            appointmentDate: { $lte: appointmentDate },
+            expirationDate: { $gte: expirationDate }
+        }).session(session);
+
+        if (overlappingInvite) {
+            throw new Error('There is already an invite overlapping this time period.');
+        }
 
         const activeOfferForRestaurant = await Offer.findOne({
             restaurant,
@@ -135,8 +144,8 @@ export const createOfferIntoDB = async (
         if (new Date(appointmentDate) < new Date()) {
             throw new Error('Appointment date cannot be in the past');
         }
-        if (new Date(expirationDate) < new Date() || new Date(expirationDate) < new Date(appointmentDate)) {
-            throw new Error('Expiration date cannot be in the past or before appointment date');
+        if (new Date(expirationDate) < new Date() || new Date(expirationDate) > new Date(appointmentDate)) {
+            throw new Error('Expiration date cannot be in the past or after appointment date');
         }
 
         // Format times (assuming formatTime returns string)
