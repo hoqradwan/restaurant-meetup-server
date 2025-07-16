@@ -52,7 +52,6 @@ export const createOfferIntoDB = async (
         const {
             appointmentDate,
             appointmentTime,
-            duration,
             description,
             restaurant,
             organizerMenuItems,
@@ -65,7 +64,13 @@ export const createOfferIntoDB = async (
             minParticipants,
             orderLimitPerParticipant,
         } = offerData;
-
+ 
+        const formattedorganizerMenuItems = typeof organizerMenuItems === "string"
+            ? (JSON.parse(organizerMenuItems) as Types.ObjectId[])
+            : organizerMenuItems;
+        const formattedAudienceDetails: AudienceDetails = typeof offerData.audienceDetails === "string"
+            ? JSON.parse(offerData.audienceDetails)
+            : (offerData.audienceDetails || {});
         // Safely destructure audienceDetails or default to empty object
         const {
             age,
@@ -78,7 +83,7 @@ export const createOfferIntoDB = async (
             weight,
             religion,
             interest,
-        } = offerData.audienceDetails ?? {};
+        } = formattedAudienceDetails;
 
         // Find the user
         const user = await UserModel.findById(userId).session(session);
@@ -137,10 +142,10 @@ export const createOfferIntoDB = async (
         // Format times (assuming formatTime returns string)
         const formattedTime = formatTime(appointmentTime);
         const formattedExpirationTime = formatTime(expirationTime);
-
+     
         let organizerTotalAmount = 0;
         const organizerMenuItemsExist = await Promise.all(
-            organizerMenuItems.map(async (menuItemId) => {
+            formattedorganizerMenuItems.map(async (menuItemId) => {
                 const menuItem = await Menu.findById(menuItemId).session(session);
                 if (!menuItem) {
                     throw new Error(`Menu item with ID ${menuItemId} not found`);
@@ -150,15 +155,15 @@ export const createOfferIntoDB = async (
             })
         );
 
-        let orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
-        if (!orgamizerWallet) {
+        // let orgamizerWallet = await Wallet.findOne({ user: user._id }).session(session);
+        // if (!orgamizerWallet) {
 
-            throw new Error('Organizer wallet not found');
-        }
+        //     throw new Error('Organizer wallet not found');
+        // }
 
-        if (orgamizerWallet.totalBalance < organizerTotalAmount) {
-            throw new Error('Insufficient Balance');
-        }
+        // if (orgamizerWallet.totalBalance < organizerTotalAmount) {
+        //     throw new Error('Insufficient Balance');
+        // }
         const restaurantWallet = await Wallet.findOne({ user: restaurant }).session(session);
         if (!restaurantWallet) {
             throw new Error('Restaurant wallet not found');
@@ -206,16 +211,16 @@ export const createOfferIntoDB = async (
         let participantsToInclude = [];
 
         if (contribution === "Each pay their own" || contribution === "Organizer pay for all") {
-            await Wallet.findByIdAndUpdate(
-                orgamizerWallet._id,
-                { $inc: { totalBalance: -organizerTotalAmount } },
-                { new: true, session }
-            );
-            await Wallet.findByIdAndUpdate(
-                restaurantWallet._id,
-                { $inc: { totalBalance: organizerTotalAmount } },
-                { new: true, session }
-            );
+            // await Wallet.findByIdAndUpdate(
+            //     orgamizerWallet._id,
+            //     { $inc: { totalBalance: -organizerTotalAmount } },
+            //     { new: true, session }
+            // );
+            // await Wallet.findByIdAndUpdate(
+            //     restaurantWallet._id,
+            //     { $inc: { totalBalance: organizerTotalAmount } },
+            //     { new: true, session }
+            // );
             if (extraChargeType === "Participants pay organizer") {
                 participantsToInclude.push({
                     user: user._id,

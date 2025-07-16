@@ -1,5 +1,6 @@
 import { GroupChat } from "../GroupChat/groupChat.model";
 import { Menu } from "../Menu/menu.model";
+import { Offer } from "../Offer/offer.model";
 import { RestaurantModel, UserModel } from "../user/user.model";
 import { UserInvitationProcessModel } from "../UserInvitaionProcess/userInvitaionProcess.model";
 import Wallet from "../Wallet/wallet.model";
@@ -12,7 +13,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
     session.startTransaction(); // Begin the transaction
 
     try {
-        const { appointmentDate, appointmentTime,  description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
+        const { appointmentDate, appointmentTime, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
 
         const formattedParticipants = JSON.parse(participants);
         const formattedorganizerMenuItems = JSON.parse(organizerMenuItems);
@@ -44,13 +45,21 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
             throw new Error("Restaurant not found");
         }
         // const now = new Date();
-        const overlappingOffer = await Invite.findOne({
+        const overlappingInvite = await Invite.findOne({
+            appointmentDate: { $lte: appointmentDate },
+            expirationDate: { $gte: expirationDate }
+        }).session(session);
+
+        if (overlappingInvite) {
+            throw new Error('There is already an invitation overlapping this time period.');
+        }
+        const overlappingOffer = await Offer.findOne({
             appointmentDate: { $lte: appointmentDate },
             expirationDate: { $gte: expirationDate }
         }).session(session);
 
         if (overlappingOffer) {
-            throw new Error('There is already an invitation overlapping this time period.');
+            throw new Error('There is already an offer overlapping this time period.');
         }
 
 

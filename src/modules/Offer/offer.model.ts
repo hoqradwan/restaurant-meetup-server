@@ -9,7 +9,7 @@ const OfferSchema = new Schema({
     appointmentDate: { type: Date, required: true },
     description: { type: String, required: true },
     appointmentTime: { type: String, required: true },
-    duration: { type: Number, required: true }, // Duration in minutes
+    duration: { type: Number}, // Duration in minutes
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
     agenda: { type: String, required: true },
@@ -23,7 +23,12 @@ const OfferSchema = new Schema({
         enum: ['Organizer pays participants', 'Participants pay organizer'],
         required: true,
     },
-    orderLimitPerParticipant: { type: Number, required: true },
+    orderLimitPerParticipant: { 
+        type: Number, 
+        required: function(this: any) {
+            return this.contribution === 'Organizer pay for all';
+        },
+    },
     minParticipants: { type: Number, required: true },
     extraChargeAmount: { type: Number, required: true, default: 0 },
     ticketNumber: { type: String, default: "" },
@@ -52,6 +57,13 @@ const OfferSchema = new Schema({
 
 }, { timestamps: true });
 
-
+// Custom validation can also be added if needed
+// Example for validation if the contribution is "Organizer pay for all"
+OfferSchema.path('orderLimitPerParticipant').validate(function(value) {
+    if (this.contribution === 'Organizer pay for all' && !value) {
+        return false; // 'orderLimitPerParticipant' is required
+    }
+    return true; // Pass validation
+}, 'Order limit per participant is required when "Organizer pay for all" is selected');
 
 export const Offer = model('Offer', OfferSchema);
