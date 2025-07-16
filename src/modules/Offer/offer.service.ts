@@ -41,7 +41,8 @@ interface OfferData {
 export const createOfferIntoDB = async (
     userId: string,
     offerData: OfferData,
-    image: string
+    mediaUrl: string,
+    fileCategory: string
 ) => {
     const session: ClientSession = await mongoose.startSession();
     session.startTransaction();
@@ -178,7 +179,7 @@ export const createOfferIntoDB = async (
             [
                 {
                     organizer: user._id,
-                    image,
+                    media: { url: mediaUrl, type: fileCategory },
                     appointmentDate,
                     agenda,
                     description,
@@ -186,9 +187,6 @@ export const createOfferIntoDB = async (
                     duration,
                     expirationDate,
                     expirationTime: formattedExpirationTime,
-                    fbUrl: user.facebookUrl || "abc",
-                    instaUrl: user.instagramUrl || "abc",
-                    linkedinUrl: user.linkedinUrl || "abc",
                     contribution,
                     extraChargeType,
                     extraChargeAmount,
@@ -420,7 +418,7 @@ export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
                 });
                 await userOfferProcess.save({ session });
             }
-        } 
+        }
         // else if (offer.contribution === "Participants pay organizer") {
         //     if (offer.extraChargeType === "Participants pay organizer") {
         //         userOfferProcess.participantsInProcess.push({
@@ -493,7 +491,7 @@ export const getOffersFromDB = async (userId: string) => {
     } else {
         orConditions.push({ 'audienceDetails.interests': user.interests });
     }
-   
+
     // 3. Query offers matching any of the above fields (partial match)
     const offers = await Offer.find({ $or: orConditions });
 
