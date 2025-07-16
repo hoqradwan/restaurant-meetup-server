@@ -9,7 +9,7 @@ const InviteSchema = new Schema({
     appointmentDate: { type: Date, required: true },
     description: { type: String, required: true },
     appointmentTime: { type: String, required: true },
-    duration: { type: Number, required: true }, // Duration in minutes
+    duration: { type: Number}, 
     expirationDate: { type: Date, required: true },
     expirationTime: { type: String, required: true },
     agenda: { type: String, required: true },

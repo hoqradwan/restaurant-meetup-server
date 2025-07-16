@@ -12,7 +12,7 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
     session.startTransaction(); // Begin the transaction
 
     try {
-        const { appointmentDate, appointmentTime, duration, description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
+        const { appointmentDate, appointmentTime,  description, restaurant, organizerMenuItems, expirationDate, expirationTime, agenda, participants, contribution, extraChargeType, extraChargeAmount, orderLimitPerParticipant } = inviteData;
 
         const formattedParticipants = JSON.parse(participants);
         const formattedorganizerMenuItems = JSON.parse(organizerMenuItems);
@@ -24,16 +24,16 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
         }
 
         // Validate duration
-        const isDurationValid = duration > 0 && duration <= 1440;
-        if (!isDurationValid) {
-            throw new Error("Duration must be between 1 and 1440 minutes (24 hours)");
-        }
+        // const isDurationValid = duration > 0 && duration <= 1440;
+        // if (!isDurationValid) {
+        //     throw new Error("Duration must be between 1 and 1440 minutes (24 hours)");
+        // }
 
         // Check if the duration is valid based on the difference between appointment time and expiration time
         const differencebetweenTimeAndExpirationTIme = Math.abs(new Date(expirationTime).getTime() - new Date(appointmentTime).getTime()) / (1000 * 60); // Difference in minutes
-        if (duration > differencebetweenTimeAndExpirationTIme) {
-            throw new Error("Duration cannot be greater than the difference between appointment time and expiration time");
-        }
+        // if (duration > differencebetweenTimeAndExpirationTIme) {
+        //     throw new Error("Duration cannot be greater than the difference between appointment time and expiration time");
+        // }
 
         // if (expirationTime > appointmentTime) {
         //     throw new Error("Expiration time cannot be less than appointment time");
@@ -132,7 +132,6 @@ export const createInviteIntoDB = async (inviteData: any, userId: string, mediaU
             agenda,
             description,
             appointmentTime: formattedTime,
-            duration,
             expirationDate,
             expirationTime: formattedExpirationTime,
             contribution,

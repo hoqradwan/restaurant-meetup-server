@@ -23,6 +23,8 @@ const OfferSchema = new Schema({
         enum: ['Organizer pays participants', 'Participants pay organizer'],
         required: true,
     },
+    orderLimitPerParticipant: { type: Number, required: true },
+    minParticipants: { type: Number, required: true },
     extraChargeAmount: { type: Number, required: true, default: 0 },
     ticketNumber: { type: String, default: "" },
     status: {

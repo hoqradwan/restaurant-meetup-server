@@ -1,7 +1,7 @@
 import express from 'express';
 import { acceptInvite, createInvite } from './invite.controller';
 import { adminMiddleware } from '../../middlewares/auth';
-import upload, { uploadImage, uploadVideo } from '../../middlewares/fileUploadNormal';
+import upload from '../../middlewares/fileUploadNormal';
 
 const router = express.Router();
 

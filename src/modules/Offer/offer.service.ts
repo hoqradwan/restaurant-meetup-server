@@ -35,6 +35,8 @@ interface OfferData {
     extraChargeType: string;
     extraChargeAmount: number;
     audienceDetails?: AudienceDetails;
+    minParticipants?: number;
+    orderLimitPerParticipant?: number;
     age?: number; // sometimes may come on root, better ignore or unify
 }
 
@@ -60,6 +62,8 @@ export const createOfferIntoDB = async (
             contribution,
             extraChargeType,
             extraChargeAmount,
+            minParticipants,
+            orderLimitPerParticipant,
         } = offerData;
 
         // Safely destructure audienceDetails or default to empty object
@@ -101,20 +105,20 @@ export const createOfferIntoDB = async (
             throw new Error('You have already created an active offer for this restaurant.');
         }
 
-        // Validate duration
-        if (!(duration > 0 && duration <= 1440)) {
-            throw new Error('Duration must be between 1 and 1440 minutes (24 hours)');
-        }
+        // // Validate duration
+        // if (!(duration > 0 && duration <= 1440)) {
+        //     throw new Error('Duration must be between 1 and 1440 minutes (24 hours)');
+        // }
 
         // Validate time difference
-        const diffMinutes =
-            Math.abs(new Date(expirationTime).getTime() - new Date(appointmentTime).getTime()) /
-            (1000 * 60);
-        if (duration > diffMinutes) {
-            throw new Error(
-                'Duration cannot be greater than the difference between appointment time and expiration time'
-            );
-        }
+        // const diffMinutes =
+        //     Math.abs(new Date(expirationTime).getTime() - new Date(appointmentTime).getTime()) /
+        //     (1000 * 60);
+        // if (duration > diffMinutes) {
+        //     throw new Error(
+        //         'Duration cannot be greater than the difference between appointment time and expiration time'
+        //     );
+        // }
 
         // Check if restaurant exists
         const isRestaurantExists = await RestaurantModel.findById(restaurant).session(session);
@@ -184,13 +188,14 @@ export const createOfferIntoDB = async (
                     agenda,
                     description,
                     appointmentTime: formattedTime,
-                    duration,
                     expirationDate,
                     expirationTime: formattedExpirationTime,
                     contribution,
                     extraChargeType,
                     extraChargeAmount,
                     status: 'Pending',
+                    minParticipants,
+                    orderLimitPerParticipant,
                     audienceDetails: audienceDetailsData,
                     participants: participantData,
                     restaurant,
