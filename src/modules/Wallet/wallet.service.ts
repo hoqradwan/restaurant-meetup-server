@@ -23,7 +23,7 @@ export const rechargeBalanceIntoDB = async (userId: string, role: string, paymen
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const { amount, transactionId, paymentType } = paymentData;
+        const { amount, transactionId } = paymentData;
         let user;
         if (role === "user") {
             user = await UserModel.findById(userId).session(session);
@@ -35,7 +35,7 @@ export const rechargeBalanceIntoDB = async (userId: string, role: string, paymen
         }
         let payment: any = {
             transactionId,
-            paymentType : "online",
+            paymentType: "online",
             user: userId,
             paymentData: {},
             paymentDate: new Date(),
@@ -68,27 +68,54 @@ export const rechargeBalanceIntoDB = async (userId: string, role: string, paymen
         throw error;
     }
 }
-export const withdrawBalanceIntoDB = async (userId: string, role: string, amount: number) => {
-    let user;
-    if (role === "user") {
-        user = await UserModel.findById(userId);
-    } else if (role === "restaurant") {
-        user = await RestaurantModel.findById(userId);
-    }
-    if (!user) {
-        throw new Error("User not found")
-    }
+export const withdrawBalanceIntoDB = async (userId: string, role: string, paymentData: Partial<IPayment>) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+    try {
+        const { amount, transactionId } = paymentData;
 
-    // Find or create wallet for the user
-    let wallet = await Wallet.findOne({ user: userId });
-    if (!wallet) {
-        wallet = new Wallet({ user: userId, type: role });
+        let user;
+        if (role === "user") {
+            user = await UserModel.findById(userId).session(session);
+        } else if (role === "restaurant") {
+            user = await RestaurantModel.findById(userId).session(session);
+        }
+        if (!user) {
+            throw new Error("User not found");
+        }
+        let payment: any = {
+            transactionId,
+            paymentType: "online",
+            user: userId,
+            paymentData: {},
+            paymentDate: new Date(),
+            status: 'completed',
+            isDeleted: false,
+        };
+
+        // Create the payment record
+        const createdPayment = await PaymentModel.create([payment], { session });
+        if (!createdPayment || createdPayment.length === 0) {
+            throw new Error('Payment creation failed');
+        }
+
+        // Find or create wallet for the user
+        let wallet = await Wallet.findOne({ user: userId }).session(session);
+        if (!wallet) {
+            wallet = new Wallet({ user: userId, type: role });
+        }
+
+        wallet.totalBalance -= amount ?? 0;
+        wallet.totalWithdrawal += amount ?? 0;
+        await wallet.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return wallet;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
     }
-
-    // Recharge balance logic (for example, adding a fixed amount)
-    wallet.totalBalance -= amount; // Example recharge amount
-    wallet.totalWithdrawal += amount; // Example recharge amount
-    await wallet.save();
-
-    return wallet;
 }

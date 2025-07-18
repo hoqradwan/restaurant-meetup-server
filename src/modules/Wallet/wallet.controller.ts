@@ -6,7 +6,7 @@ import { getMyWalletFromDB, rechargeBalanceIntoDB, withdrawBalanceIntoDB } from 
 
 export const getMyWallet = catchAsync(async (req: CustomRequest, res: Response) => {
     const { id: userId, role } = req.user;
-    const result = await getMyWalletFromDB(userId,role);
+    const result = await getMyWalletFromDB(userId, role);
 
     sendResponse(res, {
         statusCode: 201,
@@ -18,7 +18,7 @@ export const getMyWallet = catchAsync(async (req: CustomRequest, res: Response) 
 export const rechargeBalance = catchAsync(async (req: CustomRequest, res: Response) => {
     const paymentData = req.body;
     const { id: userId, role } = req.user;
-    const result = await rechargeBalanceIntoDB(userId,role,paymentData);
+    const result = await rechargeBalanceIntoDB(userId, role, paymentData);
 
     sendResponse(res, {
         statusCode: 201,
@@ -28,9 +28,9 @@ export const rechargeBalance = catchAsync(async (req: CustomRequest, res: Respon
     });
 });
 export const withdrawBalance = catchAsync(async (req: CustomRequest, res: Response) => {
-    const {amount} = req.body;
+    const paymentData = req.body;
     const { id: userId, role } = req.user;
-    const result = await withdrawBalanceIntoDB(userId,role,amount);
+    const result = await withdrawBalanceIntoDB(userId, role, paymentData);
 
     sendResponse(res, {
         statusCode: 201,
