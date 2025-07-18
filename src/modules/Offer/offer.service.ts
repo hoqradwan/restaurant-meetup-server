@@ -65,7 +65,7 @@ export const createOfferIntoDB = async (
             minParticipants,
             orderLimitPerParticipant,
         } = offerData;
- 
+
         const formattedorganizerMenuItems = typeof organizerMenuItems === "string"
             ? (JSON.parse(organizerMenuItems) as Types.ObjectId[])
             : organizerMenuItems;
@@ -151,7 +151,7 @@ export const createOfferIntoDB = async (
         // Format times (assuming formatTime returns string)
         const formattedTime = formatTime(appointmentTime);
         const formattedExpirationTime = formatTime(expirationTime);
-     
+
         let organizerTotalAmount = 0;
         const organizerMenuItemsExist = await Promise.all(
             formattedorganizerMenuItems.map(async (menuItemId) => {

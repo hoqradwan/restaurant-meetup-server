@@ -16,9 +16,9 @@ export const getMyWallet = catchAsync(async (req: CustomRequest, res: Response) 
     });
 });
 export const rechargeBalance = catchAsync(async (req: CustomRequest, res: Response) => {
-    const {amount} = req.body;
+    const paymentData = req.body;
     const { id: userId, role } = req.user;
-    const result = await rechargeBalanceIntoDB(userId,role,amount);
+    const result = await rechargeBalanceIntoDB(userId,role,paymentData);
 
     sendResponse(res, {
         statusCode: 201,

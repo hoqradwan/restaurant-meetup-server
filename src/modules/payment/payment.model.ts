@@ -8,11 +8,16 @@ const paymentSchema: Schema<IPayment> = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    bookingId:{
+      type: Schema.Types.ObjectId,
+      ref: "Booking", // Adjust the ref according to your booking model
+    },
     user: {
       type: Schema.Types.ObjectId,
       required: true,
       ref: "User", // Adjust the ref according to your user model
     },
+    
     amount: {
       type: Number,
       required: true,
@@ -21,9 +26,18 @@ const paymentSchema: Schema<IPayment> = new mongoose.Schema(
       type: Object,
       required: true,
     },
+    paymentDate:{
+      type: Date,
+      default: Date.now, // Automatically sets to current date if not provided
+    },
     status: {
       type: String,
       enum: ["completed", "pending", "failed"],
+      required: true,
+    },
+    paymentType:{
+      type: String,
+      enum: [ "online","cash"],
       required: true,
     },
     isDeleted: {
