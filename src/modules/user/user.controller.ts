@@ -21,7 +21,7 @@ import {
   updateUserById,
   userDelete,
 } from "./user.service";
-
+import path from "path";
 import { OTPModel, PendingUserModel, RestaurantModel, UserModel } from "./user.model";
 
 import { validateUserInput } from "./user.validation";
@@ -34,14 +34,102 @@ import {
 import httpStatus from "http-status";
 import { CustomRequest } from "../../utils/customRequest";
 import Wallet from "../Wallet/wallet.model";
+import { getFileTypeCategory, validateFileSize } from "../../middlewares/fileUploadNormal";
+import { extractFile } from "./user.utils";
 
 export const registerUser = catchAsync(async (req: Request, res: Response) => {
-  const { firstName, lastName, email, password, confirmPassword, role } = req.body;
-  const validationError = validateUserInput(firstName, lastName, email, password, role);
-
-  if (validationError) {
-    return sendError(res, httpStatus.BAD_REQUEST, validationError);
+  const { address,
+    phone,
+    interests,
+    languages,
+    maritalStatus,
+    children,
+    politicalViews,
+    groupsAndAffiliation,
+    religion,
+    workExperience,
+    profession,
+    educationalQualification,
+    height,
+    weight,
+    instagramUrl,
+    facebookUrl,
+    linkedinUrl,
+    bio,
+    gender,
+    rece,
+    age, } = req.body;
+  // Helper to extract file from req.files
+  const formattedCoordinates = JSON.parse(req.body.coordinates);
+  // Media file
+  const mediaFile = extractFile("media", req);
+  let fileCategory;
+  if (mediaFile) {
+    const extName = path.extname(mediaFile.originalname).toLowerCase();
+    fileCategory = getFileTypeCategory(extName);
+    if (!fileCategory || (fileCategory !== "image" && fileCategory !== "video")) {
+      return res.status(400).json({
+        success: false,
+        message: "Only image and video files are allowed for media field"
+      });
+    }
+    if (!validateFileSize(mediaFile)) {
+      return res.status(400).json({
+        success: false,
+        message: `File size exceeds maximum allowed size for ${fileCategory} files`
+      });
+    }
   }
+  const mediaUrl = mediaFile?.location || null;
+
+  // idPhoto[front]
+  const idPhotoFrontFile = extractFile("idPhoto[front]", req);
+  let idPhotoFrontCategory;
+  if (idPhotoFrontFile) {
+    const extName = path.extname(idPhotoFrontFile.originalname).toLowerCase();
+    idPhotoFrontCategory = getFileTypeCategory(extName);
+    if (!idPhotoFrontCategory || idPhotoFrontCategory !== "image") {
+      return res.status(400).json({
+        success: false,
+        message: "Only image files are allowed for idPhoto[front] field"
+      });
+    }
+    if (!validateFileSize(idPhotoFrontFile)) {
+      return res.status(400).json({
+        success: false,
+        message: `File size exceeds maximum allowed size for idPhoto[front] files`
+      });
+    }
+  }
+  const idPhotoFrontUrl = idPhotoFrontFile?.location || null;
+
+  // idPhoto[back]
+  const idPhotoBackFile = extractFile("idPhoto[back]", req);
+  let idPhotoBackCategory;
+  if (idPhotoBackFile) {
+    const extName = path.extname(idPhotoBackFile.originalname).toLowerCase();
+    idPhotoBackCategory = getFileTypeCategory(extName);
+    if (!idPhotoBackCategory || idPhotoBackCategory !== "image") {
+      return res.status(400).json({
+        success: false,
+        message: "Only image files are allowed for idPhoto[back] field"
+      });
+    }
+    if (!validateFileSize(idPhotoBackFile)) {
+      return res.status(400).json({
+        success: false,
+        message: `File size exceeds maximum allowed size for idPhoto[back] files`
+      });
+    }
+  }
+  const idPhotoBackUrl = idPhotoBackFile?.location || null;
+
+  const { firstName, lastName, email, password, confirmPassword, role } = req.body;
+  // const validationError = validateUserInput(firstName, lastName, email, password, role);
+
+  // if (validationError) {
+  //   return sendError(res, httpStatus.BAD_REQUEST, validationError);
+  // }
 
   if (password !== confirmPassword) {
     return sendError(res, httpStatus.BAD_REQUEST, {
@@ -56,7 +144,7 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
       message: "You already have an account.",
     });
   }
-  if(role === "restaurant"){
+  if (role === "restaurant") {
     const establishmentName = req.body.establishmentName;
     await PendingUserModel.findOneAndUpdate(
       { email },
@@ -79,6 +167,36 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
       lastName,
       email,
       role,
+      location: {
+        type: "Point",
+        coordinates: formattedCoordinates,
+      },
+      address,
+      phone,
+      interests,
+      languages,
+      maritalStatus,
+      image: mediaUrl,
+      children,
+      idPhoto: {
+        front: idPhotoFrontUrl,
+        back: idPhotoBackUrl,
+      },
+      politicalViews,
+      groupsAndAffiliation,
+      religion,
+      workExperience,
+      profession,
+      educationalQualification,
+      height,
+      weight,
+      instagramUrl,
+      facebookUrl,
+      linkedinUrl,
+      bio,
+      gender,
+      rece,
+      age,
       password,
       confirmPassword,
     },
@@ -92,7 +210,7 @@ export const registerUser = catchAsync(async (req: Request, res: Response) => {
   const token = jwt.sign({ email }, JWT_SECRET_KEY as string, {
     expiresIn: "7d",
   });
- 
+
 
   sendResponse(res, {
     statusCode: httpStatus.OK,
@@ -326,7 +444,7 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     });
   }
 
-  const { firstName, lastName, password, role,establishmentName } = (await getUserRegistrationDetails(
+  const { firstName, lastName, password, role, establishmentName } = (await getUserRegistrationDetails(
     email,
   )) as IPendingUser;
   //console.log(objective, "objective from controller");
@@ -340,13 +458,13 @@ export const verifyOTP = catchAsync(async (req: Request, res: Response) => {
     establishmentName,
     hashedPassword,
   });
-    await Wallet.create({
+  await Wallet.create({
     user: result._id,
     totalBalance: 0,
     totalWithdrawal: 0,
     type: role,
   });
-    
+
 
   // await emitNotification({
   //   userId: createdUser._id as string,
@@ -701,7 +819,7 @@ export const resturantloginUser = catchAsync(
     //   });
     // }
 
-    const restaurant = await RestaurantModel.findOne({email});
+    const restaurant = await RestaurantModel.findOne({ email });
     console.log({ restaurant })
     if (!restaurant) {
       return sendError(res, httpStatus.NOT_FOUND, {

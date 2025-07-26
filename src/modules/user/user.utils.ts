@@ -1,3 +1,13 @@
+import { Request } from "express";
+
+ export function extractFile(field: string,req:Request): (Express.Multer.File & { location?: string }) | null {
+      return req.files &&
+        typeof req.files === "object" &&
+        field in req.files &&
+        Array.isArray((req.files as { [fieldname: string]: Express.Multer.File[] })[field])
+        ? ((req.files as { [fieldname: string]: (Express.Multer.File & { location?: string })[] })[field][0])
+        : null;
+    }
 // // import axios from "axios";
 
 // import httpStatus from "http-status";

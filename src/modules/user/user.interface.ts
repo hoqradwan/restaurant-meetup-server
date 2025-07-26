@@ -67,6 +67,7 @@ export interface IPendingUser extends Document {
   email: string;
   firstName: string;
   lastName:  String;
+  image : string;
   password: string;
   confirmPassword: string;
   establishmentName: string;

@@ -2,7 +2,13 @@ import mongoose, { model, Schema, SchemaOptions } from "mongoose";
 import { IBaseUser, IUser, IRestaurant, IAdmin, IPendingUser, IOTP } from "./user.interface";
 
 // Pending User Schema
-const PendingUserSchema = new Schema<IPendingUser>({
+interface IsUserRoleFunction {
+  (): boolean;
+}
+
+const isUserRole: IsUserRoleFunction = function (this: { role: string }) { return this.role === "user"; };
+
+const PendingUserSchema = new Schema({
   email: { type: String, required: true, unique: true, trim: true },
   firstName: { type: String, required: true, trim: true },
   lastName: { type: String, required: true, trim: true },
@@ -16,7 +22,71 @@ const PendingUserSchema = new Schema<IPendingUser>({
     }
   },
   role: { type: String, enum: ["user", "admin", "restaurant"], required: true },
-});
+
+  // User-specific fields (only allowed for role "user", not required)
+  image: { type: String, default: "", },
+  age: { type: String, default: "", },
+  race: { type: String, default: "", },
+  gender: { type: String, default: "", },
+  bio: { type: String, default: "", },
+  linkedinUrl: { type: String, default: "", },
+  facebookUrl: { type: String, default: "", },
+  instagramUrl: { type: String, default: "", },
+  weight: { type: Number, default: 0, },
+  height: { type: Number, default: 0, },
+  educationalQualification: {
+    type: String,
+    enum: ["High School", "Bachelor", "Master", "PhD", "Other"],
+    default: "High School",
+  },
+  profession: { type: String, default: "", },
+  workExperience: { type: String, default: "", },
+  religion: { type: String, default: "", },
+  groupsAndAffiliation: { type: String, default: "", },
+  politicalViews: {
+    type: String,
+    enum: ["right", "left", "others", "none"],
+    default: "none",
+  },
+  maritalStatus: {
+    type: String,
+    enum: ["single", "married"],
+    default: "single",
+  },
+  children: {
+    type: String,
+    enum: ["yes", "no"],
+    default: "no",
+  },
+  languages: {
+    type: [String],
+    enum: ["English", "Bangla", "Spanish", "French", "German", "Other"],
+    default: ["English"],
+  },
+  interests: { type: [String], default: [], },
+
+  // Common fields for both user and restaurant roles
+  phone: { type: String, trim: true },
+  address: { type: String, trim: true },
+  location: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point",
+    },
+    coordinates: {
+      type: [Number], // [longitude, latitude]
+      default: [0, 0],
+    },
+  },
+  idPhoto: {
+    front: { type: String },
+    back: { type: String },
+  },
+  isDeleted: { type: Boolean, default: false },
+  isActive: { type: Boolean, default: false },
+}, { timestamps: true });
+
 export const PendingUserModel = model<IPendingUser>("PendingUser", PendingUserSchema);
 
 // Base User Schema
@@ -64,8 +134,6 @@ const UserSchema = extendSchema(BaseUserSchema, {
   gender: { type: String, default: "" },
   about: { type: String, default: "" },
   bio: { type: String, default: "" },
-  expiryDate: { type: Date, default: null },
-  activeDate: { type: Date, default: null },
   linkedinUrl: { type: String, default: "" },
   facebookUrl: { type: String, default: "" },
   instagramUrl: { type: String, default: "" },
@@ -87,7 +155,7 @@ const UserSchema = extendSchema(BaseUserSchema, {
   },
   maritalStatus: {
     type: String,
-    enum: ["single", "married"],
+    enum: ["single", "married","divorced","complicated"],
     default: "single"
   },
   children: {

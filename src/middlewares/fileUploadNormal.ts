@@ -93,23 +93,31 @@ const storage = multerS3({
     const fileCategory = getFileTypeCategory(extName);
     const timestamp = Date.now();
     const sanitizedOriginalName = file.originalname.replace(extName, "").replace(/[^a-zA-Z0-9-_]/g, "");
-    
-    // Create folder structure based on file type
-    const folderPath = fileCategory ? `${fileCategory}s/` : "misc/";
-    const fileName = `${folderPath}${timestamp}-${sanitizedOriginalName}${extName}`;
+
+    // Dynamically create folder based on fieldname
+    // Default folder for unknown fieldname
+    let folderPathValue = 'misc/';
+    if (file.fieldname === 'media') {
+      folderPathValue = 'media/';
+    } else if (file.fieldname.startsWith('idPhoto')) {
+      folderPathValue = `idPhotos/${file.fieldname}/`; // Separate folder for front and back ID photos
+    } else if (fileCategory) {
+      folderPathValue = `${fileCategory}s/`; // Based on the file type category (image/video/document)
+    }
+    // Create the file name with the folder path
+    const fileName = `${folderPathValue}${timestamp}-${sanitizedOriginalName}${extName}`;
 
     // Store the file info in request body based on field name
-    if (file.fieldname === "media") {
-      if (!req.body.uploadedFiles) {
-        req.body.uploadedFiles = {};
-      }
-      req.body.uploadedFiles[file.fieldname] = {
-        fileName,
-        fileType: fileCategory,
-        originalName: file.originalname,
-        size: file.size
-      };
+    if (!req.body.uploadedFiles) {
+      req.body.uploadedFiles = {};
     }
+
+    req.body.uploadedFiles[file.fieldname] = {
+      fileName,
+      fileType: fileCategory,
+      originalName: file.originalname,
+      size: file.size
+    };
 
     cb(null, fileName);
   },

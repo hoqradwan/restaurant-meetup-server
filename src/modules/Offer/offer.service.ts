@@ -291,7 +291,6 @@ export const createOfferIntoDB = async (
         throw error;
     }
 };
-
 export const acceptOfferIntoDB = async (userId: string, offerData: any) => {
     const { offerId, userMenuItems } = offerData;
     const session: ClientSession = await mongoose.startSession();

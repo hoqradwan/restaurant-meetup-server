@@ -14,7 +14,7 @@ import {
   getAllUsers,
   deleteUser,
   adminloginUser,
-  
+
   resturantloginUser,
 } from "./user.controller";
 import upload from "../../middlewares/fileUploadNormal";
@@ -23,7 +23,7 @@ import { adminMiddleware } from "../../middlewares/auth";
 const router = express.Router();
 router.post(
   "/register",
-
+  upload.fields([{ name: "media", maxCount: 1 }, { name: "idPhoto[front]", maxCount: 1 }, { name: "idPhoto[back]", maxCount: 1 }]),
   registerUser,
 );
 router.post("/login", loginUser);
